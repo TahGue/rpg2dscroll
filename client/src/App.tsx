@@ -3,8 +3,6 @@ import { useGameStore } from '@/store/gameStore';
 import { MainMenu } from '@/ui/screens/MainMenu';
 import { WorldExploreView } from '@/ui/screens/WorldExploreView';
 import { UpgradeScreen } from '@/ui/screens/UpgradeScreen';
-import { CampUpgradesScreen } from '@/ui/screens/CampUpgradesScreen';
-import { RelicUpgradesScreen } from '@/ui/screens/RelicUpgradesScreen';
 import { InventoryScreen } from '@/ui/screens/InventoryScreen';
 import { PostGameScreen } from '@/ui/screens/PostGameScreen';
 import { SettingsScreen } from '@/ui/screens/SettingsScreen';
@@ -37,8 +35,6 @@ export default function App() {
         {screen === 'main_menu' && <MainMenu />}
         {screen === 'world_explore' && <WorldExploreView />}
         {screen === 'upgrade' && <UpgradeScreen />}
-        {screen === 'camp_upgrades' && <CampUpgradesScreen />}
-        {screen === 'relic_upgrades' && <RelicUpgradesScreen />}
         {screen === 'inventory' && <InventoryScreen />}
         {screen === 'post_game' && <PostGameScreen />}
         {screen === 'settings' && <SettingsScreen />}

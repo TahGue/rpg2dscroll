@@ -422,6 +422,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       || screen === 'mission_result'
       || screen === 'defense_skills'
       || screen === 'world_map'
+      || screen === 'camp_upgrades'
+      || screen === 'relic_upgrades'
     ) {
       set({ screen: 'world_explore' });
       return;
@@ -943,9 +945,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
   upgradeLevel: (upgradeId) => {
     const { save } = get();
     const current = save.upgrades[upgradeId] ?? (upgradeId === 'lion_level' || upgradeId === 'sand_slash' || upgradeId === 'bow_level' || upgradeId === 'spear_level' ? 0 : 1);
+    const inventory = { ...save.inventory };
+    if (upgradeId === 'spear_level' && current === 0) {
+      inventory.simple_spear = Math.max(1, inventory.simple_spear ?? 0);
+    }
+    if (upgradeId === 'bow_level' && current === 0) {
+      inventory.bow = Math.max(1, inventory.bow ?? 0);
+      inventory.arrows = (inventory.arrows ?? 0) + 10;
+    }
+    const maxHealthGain = upgradeId === 'malik_hp' ? 15 : 0;
     const updated = applyMetaAchievements({
       ...save,
+      inventory,
       upgrades: { ...save.upgrades, [upgradeId]: current + 1 },
+      playerStats: {
+        ...save.playerStats,
+        maxHealth: save.playerStats.maxHealth + maxHealthGain,
+        health: Math.min(save.playerStats.maxHealth + maxHealthGain, save.playerStats.health + maxHealthGain),
+        attack: save.playerStats.attack + (upgradeId === 'sword_damage' ? 2 : upgradeId === 'spear_level' ? 1 : upgradeId === 'bow_level' ? 1 : 0),
+        defense: save.playerStats.defense + (upgradeId === 'block_strength' ? 1 : 0),
+        speed: save.playerStats.speed + (upgradeId === 'malik_speed' ? 0.05 : 0),
+      },
     });
     persistSave(updated);
     if (get().authEmail) void pushCloudSave(updated).catch(() => {});

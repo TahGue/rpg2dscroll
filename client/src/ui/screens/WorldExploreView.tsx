@@ -177,8 +177,6 @@ export function WorldExploreView() {
           onRest={() => { restAtCamp(); SoundManager.play('click'); }}
           onShop={() => { setOverworldCampOpen(false); setShopOpen(true); }}
           onUpgrades={() => { setOverworldCampOpen(false); navigate('upgrade'); }}
-          onCampUpgrades={() => { setOverworldCampOpen(false); navigate('camp_upgrades'); }}
-          onRelics={() => { setOverworldCampOpen(false); navigate('relic_upgrades'); }}
           onInventory={() => { setOverworldCampOpen(false); navigate('inventory'); }}
           onLore={() => { setOverworldCampOpen(false); navigate('lore'); }}
           onStartNGPlus={() => {
@@ -392,8 +390,6 @@ function CampOverlay({
   onRest,
   onShop,
   onUpgrades,
-  onCampUpgrades,
-  onRelics,
   onInventory,
   onLore,
   onStartNGPlus,
@@ -404,8 +400,6 @@ function CampOverlay({
   onRest: () => void;
   onShop: () => void;
   onUpgrades: () => void;
-  onCampUpgrades: () => void;
-  onRelics: () => void;
   onInventory: () => void;
   onLore: () => void;
   onStartNGPlus: () => void;
@@ -468,9 +462,7 @@ function CampOverlay({
           </OverlayBtn>
           <OverlayBtn onClick={onShop} className="border-cyan-400/50 text-cyan-200">Open Vendor Stalls</OverlayBtn>
           <OverlayBtn onClick={onUpgrades}>Malik Upgrades</OverlayBtn>
-          <OverlayBtn onClick={onCampUpgrades} className="border-amber-400/50 text-amber-200">Camp Upgrades</OverlayBtn>
-          <OverlayBtn onClick={onRelics} className="border-purple-400/50 text-purple-200">Sentinel Relics</OverlayBtn>
-          <OverlayBtn onClick={onInventory} className="border-blue-400/50 text-blue-200">Inventory</OverlayBtn>
+          <OverlayBtn onClick={onInventory} className="border-blue-400/50 text-blue-200">Workbench / Cooking / Inventory</OverlayBtn>
           <OverlayBtn onClick={onLore} className="border-purple-400/50 text-purple-200">Desert Lore</OverlayBtn>
         </div>
         {save.campaignComplete && (

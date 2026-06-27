@@ -13,8 +13,8 @@ export interface CampUpgradeDefinition {
 export const CAMP_UPGRADES: CampUpgradeDefinition[] = [
   {
     id: 'well_blessing',
-    name: 'Well Blessing',
-    description: 'Oasis wells regenerate faster (+3 HP/sec per level)',
+    name: 'Clean Water Jars',
+    description: 'Improves camp recovery and stores safe drinking water.',
     maxLevel: 3,
     goldCost: 60,
     waterCost: 2,
@@ -24,8 +24,8 @@ export const CAMP_UPGRADES: CampUpgradeDefinition[] = [
   },
   {
     id: 'war_camp',
-    name: 'War Camp Training',
-    description: 'Malik deals +5% damage per level on all missions',
+    name: 'Training Yard',
+    description: 'A practice space for Malik, hunters, and village guards.',
     maxLevel: 5,
     goldCost: 80,
     waterCost: 0,
@@ -35,8 +35,8 @@ export const CAMP_UPGRADES: CampUpgradeDefinition[] = [
   },
   {
     id: 'gate_workshop',
-    name: 'Gate Workshop',
-    description: 'Gates and wells gain +40 max HP per level',
+    name: 'Workbench',
+    description: 'A sturdy bench for repairing tools and preparing gear.',
     maxLevel: 5,
     goldCost: 70,
     waterCost: 0,
@@ -47,7 +47,7 @@ export const CAMP_UPGRADES: CampUpgradeDefinition[] = [
   {
     id: 'palm_timbers',
     name: 'Palm Timbers',
-    description: 'Wood reinforcements add +25 max HP to gates and wells per level',
+    description: 'Palm wood storage for camp repairs, cooking fires, and crafting.',
     maxLevel: 4,
     goldCost: 45,
     waterCost: 0,
@@ -57,8 +57,8 @@ export const CAMP_UPGRADES: CampUpgradeDefinition[] = [
   },
   {
     id: 'lion_den',
-    name: 'Lion Den',
-    description: 'Sahar respawns faster and roars more often',
+    name: 'Companion Shelter',
+    description: 'A shaded shelter reserved for future companions.',
     maxLevel: 3,
     goldCost: 100,
     waterCost: 1,
@@ -68,7 +68,7 @@ export const CAMP_UPGRADES: CampUpgradeDefinition[] = [
   },
   {
     id: 'merchant_tents',
-    name: 'Merchant Tents',
+    name: 'Vendor Tents',
     description: 'Shop items cost 10% less gold per level',
     maxLevel: 3,
     goldCost: 50,

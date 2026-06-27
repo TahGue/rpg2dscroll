@@ -2,6 +2,48 @@ import { UPGRADES, getUpgradeCost } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { SoundManager } from '@/game/systems/SoundManager';
 
+const ADVENTURE_UPGRADE_IDS = new Set([
+  'sword_damage',
+  'malik_hp',
+  'malik_speed',
+  'block_strength',
+  'spear_level',
+  'bow_level',
+]);
+
+const ADVENTURE_UPGRADE_COPY: Record<string, { name: string; description: string; detail: string }> = {
+  sword_damage: {
+    name: 'Sword Training',
+    description: 'Increases Malik attack for top-down combat.',
+    detail: '+2 attack',
+  },
+  malik_hp: {
+    name: 'Desert Endurance',
+    description: 'Raises Malik max health for exploration and fights.',
+    detail: '+15 max HP',
+  },
+  malik_speed: {
+    name: 'Trail Agility',
+    description: 'Improves Malik movement training.',
+    detail: '+0.05 speed',
+  },
+  block_strength: {
+    name: 'Guard Discipline',
+    description: 'Reduces incoming damage from animals and bandits.',
+    detail: '+1 defense',
+  },
+  spear_level: {
+    name: 'Spear Handling',
+    description: 'Improves spear fighting and grants a simple spear at first rank.',
+    detail: '+1 attack',
+  },
+  bow_level: {
+    name: 'Bow Handling',
+    description: 'Improves bow fighting and grants a bow with arrows at first rank.',
+    detail: '+1 attack',
+  },
+};
+
 export function UpgradeScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const save = useGameStore((s) => s.save);
@@ -22,17 +64,22 @@ export function UpgradeScreen() {
   return (
     <div className="flex h-full flex-col bg-desert-night text-white">
       <header className="flex items-center justify-between border-b border-white/10 px-8 py-6">
-        <button type="button" onClick={() => { SoundManager.play('click'); setScreen('main_menu'); }} className="text-white/60 hover:text-white">
+        <button type="button" onClick={() => { SoundManager.play('click'); setScreen(useGameStore.getState().mapHomeScreen); }} className="text-white/60 hover:text-white">
           ← Back
         </button>
-        <h2 className="font-display text-2xl text-desert-gold">Upgrades</h2>
-        <span className="text-desert-gold">Lv.{save.level} · {save.gold}g</span>
+        <h2 className="font-display text-2xl text-desert-gold">Malik Training</h2>
+        <span className="text-desert-gold">Lv.{save.level} · {save.gold}g · HP {save.playerStats.health}/{save.playerStats.maxHealth}</span>
       </header>
 
       <div className="grid flex-1 grid-cols-1 gap-4 overflow-auto p-8 md:grid-cols-2 lg:grid-cols-3">
-        {UPGRADES.map((upgrade) => {
+        {UPGRADES.filter((upgrade) => ADVENTURE_UPGRADE_IDS.has(upgrade.id)).map((upgrade) => {
+          const copy = ADVENTURE_UPGRADE_COPY[upgrade.id] ?? {
+            name: upgrade.name,
+            description: upgrade.description,
+            detail: `+${upgrade.effectPerLevel} per level`,
+          };
           const rawLevel = save.upgrades[upgrade.id];
-          const zeroStart = upgrade.id === 'lion_level' || upgrade.id === 'sand_slash' || upgrade.id === 'bow_level' || upgrade.id === 'spear_level';
+          const zeroStart = upgrade.id === 'bow_level' || upgrade.id === 'spear_level';
           const level = rawLevel ?? (zeroStart ? 0 : 1);
           const maxed = level >= upgrade.maxLevel;
           const cost = getUpgradeCost(upgrade, Math.max(level, 1));
@@ -42,18 +89,14 @@ export function UpgradeScreen() {
           return (
             <div key={upgrade.id} className="rounded-xl border border-desert-gold/30 bg-black/30 p-5">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-desert-gold">{upgrade.name}</h3>
-                <span className="text-xs uppercase text-white/40">{upgrade.category}</span>
+                <h3 className="font-semibold text-desert-gold">{copy.name}</h3>
+                <span className="text-xs uppercase text-white/40">adventure</span>
               </div>
-              <p className="mt-1 text-sm text-white/60">{upgrade.description}</p>
+              <p className="mt-1 text-sm text-white/60">{copy.description}</p>
               <p className="mt-3 text-sm">
                 {isLocked ? (
                   <span className="text-desert-ember">
-                    {upgrade.id === 'lion_level'
-                      ? 'Locked — unlock to summon Sahar'
-                      : upgrade.id === 'sand_slash'
-                        ? 'Locked — unlock Sand Slash skill'
-                        : upgrade.id === 'spear_level'
+                    {upgrade.id === 'spear_level'
                           ? 'Locked — unlock Desert Spear'
                           : upgrade.id === 'bow_level'
                             ? 'Locked — unlock Desert Bow'
@@ -66,7 +109,7 @@ export function UpgradeScreen() {
                 )}
               </p>
               {!isLocked && (
-                <p className="mt-1 text-xs text-white/40">+{upgrade.effectPerLevel} per level</p>
+                <p className="mt-1 text-xs text-white/40">{copy.detail}</p>
               )}
               <button
                 type="button"

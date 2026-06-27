@@ -8,7 +8,7 @@ export function MainMenu() {
   const authEmail = useGameStore((s) => s.authEmail);
   const xpProgress = getXpProgress(save.xp, save.level);
 
-  const navigate = (screen: 'world_explore' | 'upgrade' | 'camp_upgrades' | 'relic_upgrades' | 'inventory' | 'post_game' | 'settings' | 'login' | 'leaderboard' | 'achievements' | 'lore') => {
+  const navigate = (screen: 'world_explore' | 'upgrade' | 'inventory' | 'post_game' | 'settings' | 'login' | 'leaderboard' | 'achievements' | 'lore') => {
     SoundManager.play('click');
     setScreen(screen);
   };
@@ -57,8 +57,6 @@ export function MainMenu() {
         <div className="flex flex-col gap-3">
           <MenuButton onClick={() => navigate('world_explore')}>Begin Adventure</MenuButton>
           <MenuButton onClick={() => navigate('upgrade')} variant="secondary">Upgrades</MenuButton>
-          <MenuButton onClick={() => navigate('camp_upgrades')} variant="secondary">Camp Upgrades</MenuButton>
-          <MenuButton onClick={() => navigate('relic_upgrades')} variant="secondary">Sentinel Relics</MenuButton>
           <MenuButton onClick={() => navigate('inventory')} variant="secondary">Inventory</MenuButton>
           {save.campaignComplete && (
             <MenuButton onClick={() => navigate('post_game')} variant="secondary">New Game+</MenuButton>
