@@ -10,6 +10,7 @@ import { useGameStore } from '@/store/gameStore';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { LoreDiscoveryModal } from '@/ui/screens/LoreScreen';
 import { ActBannerModal } from '@/ui/components/ActBannerModal';
+import { CampaignProgressCard } from '@/ui/components/CampaignProgressCard';
 import { DialogSystem } from '@/ui/components/DialogSystem';
 import { WorldMapCanvas } from '@/ui/world-map/WorldMapCanvas';
 import { LocationInfoPanel } from '@/ui/world-map/LocationInfoPanel';
@@ -138,6 +139,10 @@ export function WorldMap() {
         {save.campaignComplete && (
           <MapNavBtn label="New Game+" onClick={() => { SoundManager.play('click'); setScreen('post_game'); }} />
         )}
+      </div>
+
+      <div className="shrink-0 px-3 py-2 sm:px-6">
+        <CampaignProgressCard save={save} variant="inline" />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2 sm:gap-4 sm:p-4 lg:flex-row lg:p-6">

@@ -5,6 +5,7 @@ import {
   getActiveOverworldWalls,
   getNewExploredCellsNearPoint,
   getOverworldCampaignProgress,
+  getCampaignNextGoal,
   getOverworldQuestHint,
   getFastTravelDestinations,
   isOverworldPatrolActive,
@@ -280,5 +281,29 @@ describe('getOverworldCampaignProgress', () => {
     expect(progress.completedSteps).toBe(10);
     expect(progress.percent).toBe(100);
     expect(progress.chapterTitle).toBe('Complete');
+  });
+});
+
+describe('getCampaignNextGoal', () => {
+  it('returns overworld hint for desert return', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      recruitedHeroes: ['aisha'],
+      unlockedBlueprints: ['arrow_tower', 'spike_trap'],
+    };
+    expect(getCampaignNextGoal(save, 'world_explore')).toContain('Nahran Gate');
+  });
+
+  it('returns node map location for map return', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      unlockedMissions: ['mission-night-attack'],
+      completedMissions: [] as string[],
+    };
+    expect(getCampaignNextGoal(save, 'world_map')).toContain('Night Attack');
+  });
+
+  it('returns null when campaign is complete', () => {
+    expect(getCampaignNextGoal({ ...DEFAULT_SAVE, campaignComplete: true }, 'world_explore')).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import type { LocalSaveData } from '../types/save';
 import type { OverworldPOI, OverworldPatrol, OverworldRegion, OverworldRegionTransition } from './overworldTypes';
 import { getOverworldRegion } from './nahranOutskirts';
+import { getCurrentMapNodeId, getLocationDisplayName } from '../world/worldMap';
 
 export const OVERWORLD_CELL_SIZE = 100;
 export const OVERWORLD_EXPLORE_RADIUS = 130;
@@ -117,6 +118,27 @@ export function getOverworldCampaignProgress(save: OverworldCampaignSave): Overw
     chapterTitle: save.campaignComplete ? 'Complete' : chapter.title,
     chapterSubtitle: save.campaignComplete ? 'Guardian of the Dunes' : chapter.subtitle,
   };
+}
+
+type CampaignGoalSave = Pick<
+  LocalSaveData,
+  | 'completedMissions'
+  | 'recruitedHeroes'
+  | 'unlockedBlueprints'
+  | 'visitedOverworldRegions'
+  | 'campaignComplete'
+  | 'unlockedMissions'
+>;
+
+/** Short next-step text after a mission victory. */
+export function getCampaignNextGoal(
+  save: CampaignGoalSave,
+  returnScreen: 'world_explore' | 'world_map' | string,
+): string | null {
+  if (save.campaignComplete) return null;
+  if (returnScreen === 'world_explore') return getOverworldQuestHint(save);
+  const nodeId = getCurrentMapNodeId(save);
+  return `Next stop: ${getLocationDisplayName(nodeId)} on the campaign map`;
 }
 
 export function getOverworldQuestHint(

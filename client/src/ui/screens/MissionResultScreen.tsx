@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ACHIEVEMENTS, getInventoryItem, getLocationDisplayName, getCurrentMapNodeId } from '@malik/shared';
+import { ACHIEVEMENTS, getCampaignNextGoal, getInventoryItem, getLocationDisplayName, getCurrentMapNodeId } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { ActBannerModal } from '@/ui/components/ActBannerModal';
@@ -18,6 +18,7 @@ export function MissionResultScreen() {
   const refreshOverworldAfterMission = useGameStore((s) => s.refreshOverworldAfterMission);
   const pendingActBanner = useGameStore((s) => s.pendingActBanner);
   const dismissActBanner = useGameStore((s) => s.dismissActBanner);
+  const save = useGameStore((s) => s.save);
   const result = useGameStore((s) => s.lastMissionResult);
 
   useEffect(() => {
@@ -33,6 +34,11 @@ export function MissionResultScreen() {
     setScreen(missionReturnScreen);
     return null;
   }
+
+  const nextGoal =
+    result.victory && !result.campaignJustCompleted
+      ? getCampaignNextGoal(save, missionReturnScreen)
+      : null;
 
   return (
     <div className="relative flex h-full items-center justify-center bg-desert-night/95">
@@ -143,6 +149,13 @@ export function MissionResultScreen() {
             {result.unlockedLocationIds.map((id) => (
               <p key={id} className="text-xs text-white/70">🗺️ {getLocationDisplayName(id)}</p>
             ))}
+          </div>
+        )}
+
+        {nextGoal && !pendingActBanner && (
+          <div className="mb-6 rounded-lg border border-desert-gold/25 bg-desert-gold/5 p-4 text-left">
+            <p className="text-xs font-semibold uppercase tracking-wider text-desert-gold">Next</p>
+            <p className="mt-1 text-sm leading-relaxed text-white/75">{nextGoal}</p>
           </div>
         )}
 
