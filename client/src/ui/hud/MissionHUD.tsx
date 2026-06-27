@@ -1,5 +1,5 @@
 import { useGameStore } from '@/store/gameStore';
-import { getBuildDefinition, getHero, getWaveStartHint, getWaveStartLabel } from '@malik/shared';
+import { getBuildDefinition, getHero, getWaveStartHint, getWaveStartLabel, LION_MODE_LABELS, type LionMode } from '@malik/shared';
 import { buildMissionControlHints } from '@/game/utils/controlHints';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
@@ -11,6 +11,7 @@ interface MissionHUDProps {
 export function MissionHUD({ onExit }: MissionHUDProps) {
   const mission = useGameStore((s) => s.mission);
   const save = useGameStore((s) => s.save);
+  const setLionMode = useGameStore((s) => s.setLionMode);
   const selectedBuild = save.selectedBuild;
   const togglePause = useGameStore((s) => s.togglePause);
   const buildName = getBuildDefinition(selectedBuild)?.name ?? 'Arrow Tower';
@@ -53,6 +54,11 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
     SoundManager.play('wave');
     MissionControlBridge.requestStartWave();
   };
+
+  const lionUnlocked = (save.upgrades.lion_level ?? 0) >= 1;
+  const lionModes: LionMode[] = mission.isAmbush
+    ? ['follow', 'guard', 'aggressive']
+    : ['follow', 'guard', 'guard_left', 'guard_right', 'aggressive'];
 
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4">
@@ -210,6 +216,27 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
             <p className="text-[10px] text-white/50">
               Wood {mission.missionWood} · Iron {mission.missionIron}
             </p>
+          )}
+          {lionUnlocked && !mission.isAmbush && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {lionModes.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setLionMode(mode);
+                    SoundManager.play('click');
+                  }}
+                  className={`rounded border px-1.5 py-0.5 text-[9px] ${
+                    save.lionMode === mode
+                      ? 'border-amber-400/60 bg-amber-500/20 text-amber-200'
+                      : 'border-white/15 text-white/50'
+                  }`}
+                >
+                  {LION_MODE_LABELS[mode]}
+                </button>
+              ))}
+            </div>
           )}
           <p className="mt-1 text-[10px] text-white/40">{controlHints}</p>
           {mission.heroId && (

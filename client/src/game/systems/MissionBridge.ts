@@ -6,7 +6,9 @@ import {
   getBuildGoldDiscount,
   getDefenseRepairMultiplier,
   getHero,
+  getLionGuardAnchorRatio,
   type BuildUnlockContext,
+  type DefenseLayout,
 } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { persistSave } from '@/services/saveService';
@@ -395,6 +397,14 @@ export class MissionBridge {
 
   static getLionMode() {
     return useGameStore.getState().save.lionMode;
+  }
+
+  static getLionAnchorX(gateX: number, layout: DefenseLayout): number | undefined {
+    const mode = this.getLionMode();
+    const ratio = getLionGuardAnchorRatio(mode, layout.wideBattlefield);
+    if (ratio === null) return undefined;
+    if (layout.wideBattlefield) return layout.worldWidth * ratio;
+    return gateX;
   }
 
   static getLionRespawnMs(): number {

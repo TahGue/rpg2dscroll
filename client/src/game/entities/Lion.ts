@@ -17,7 +17,7 @@ export class Lion extends Phaser.Physics.Arcade.Sprite {
   private lastRoarTime = -20000;
   private roarCooldown: number;
   private player: Player;
-  private mode: 'follow' | 'guard' | 'aggressive';
+  private mode: 'follow' | 'guard' | 'guard_left' | 'guard_right' | 'aggressive';
 
   constructor(scene: Phaser.Scene, x: number, y: number, player: Player) {
     super(scene, x, y, 'lion');
@@ -46,6 +46,7 @@ export class Lion extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    this.mode = MissionBridge.getLionMode();
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     if (this.mode === 'aggressive') {
@@ -61,7 +62,10 @@ export class Lion extends Phaser.Physics.Arcade.Sprite {
       } else {
         this.followPlayer(body);
       }
-    } else if (this.mode === 'guard' && defenseX !== undefined) {
+    } else if (
+      (this.mode === 'guard' || this.mode === 'guard_left' || this.mode === 'guard_right') &&
+      defenseX !== undefined
+    ) {
       const anchorX = defenseX - 80;
       const dist = anchorX - this.x;
       if (Math.abs(dist) > 30) {
@@ -123,7 +127,7 @@ export class Lion extends Phaser.Physics.Arcade.Sprite {
   }
 
   private findNearestEnemy(enemies: Enemy[], defenseX?: number): Enemy | null {
-    if (defenseX !== undefined && (this.mode === 'guard' || this.mode === 'follow')) {
+    if (defenseX !== undefined && (this.mode === 'guard' || this.mode === 'guard_left' || this.mode === 'guard_right' || this.mode === 'follow')) {
       let gateThreat: Enemy | null = null;
       let minGateDist = Infinity;
       for (const enemy of enemies) {

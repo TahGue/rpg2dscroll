@@ -1,5 +1,6 @@
 import { INVENTORY_ITEMS, CRAFT_RECIPES, formatRecipeCost, getInventoryItem, getBuildDisplayOrder, getBuildDefinition, isBuildUnlocked, getBuildUnlockHint } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
+import { LION_MODE_LABELS, type LionMode } from '@malik/shared';
 import { SoundManager } from '@/game/systems/SoundManager';
 
 export function InventoryScreen() {
@@ -141,19 +142,19 @@ export function InventoryScreen() {
           {(save.upgrades.lion_level ?? 0) >= 1 && (
             <div>
               <h3 className="mb-3 font-semibold text-desert-gold">Sahar — Lion Mode</h3>
-              <div className="flex gap-2">
-                {(['follow', 'guard', 'aggressive'] as const).map((mode) => (
+              <div className="flex flex-wrap gap-2">
+                {(['follow', 'guard', 'guard_left', 'guard_right', 'aggressive'] as LionMode[]).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => { setLionMode(mode); SoundManager.play('click'); }}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-xs capitalize ${
+                    className={`flex-1 rounded-lg border px-2 py-2 text-[10px] ${
                       save.lionMode === mode
                         ? 'border-desert-gold bg-desert-gold/20 text-desert-gold'
                         : 'border-white/20 text-white/70'
                     }`}
                   >
-                    {mode}
+                    {LION_MODE_LABELS[mode]}
                   </button>
                 ))}
               </div>

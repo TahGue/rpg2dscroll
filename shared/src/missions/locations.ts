@@ -422,8 +422,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 3000,
         rewardGold: 40,
         enemies: [
-          { type: 'hyena', count: 4, spawnDelayMs: 700 },
-          { type: 'bandit_archer', count: 2, spawnDelayMs: 1500 },
+          { type: 'hyena', count: 4, spawnDelayMs: 700, spawnSide: 'left' },
+          { type: 'bandit_archer', count: 2, spawnDelayMs: 1500, spawnSide: 'right' },
         ],
       },
       {
@@ -431,8 +431,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 50,
         enemies: [
-          { type: 'sand_bandit', count: 4, spawnDelayMs: 800 },
-          { type: 'bandit_archer', count: 3, spawnDelayMs: 1200 },
+          { type: 'sand_bandit', count: 4, spawnDelayMs: 800, spawnSide: 'left' },
+          { type: 'bandit_archer', count: 3, spawnDelayMs: 1200, spawnSide: 'right' },
         ],
       },
       {
@@ -440,8 +440,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 90,
         enemies: [
-          { type: 'scorpion_skitter', count: 3, spawnDelayMs: 700 },
-          { type: 'sand_bandit', count: 4, spawnDelayMs: 800 },
+          { type: 'scorpion_skitter', count: 3, spawnDelayMs: 700, spawnSide: 'right' },
+          { type: 'sand_bandit', count: 4, spawnDelayMs: 800, spawnSide: 'left' },
         ],
       },
       {
@@ -449,8 +449,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 6000,
         rewardGold: 110,
         enemies: [
-          { type: 'bandit_leader', count: 1, spawnDelayMs: 1500 },
-          { type: 'scorpion_skitter', count: 2, spawnDelayMs: 800 },
+          { type: 'bandit_leader', count: 1, spawnDelayMs: 1500, spawnSide: 'left' },
+          { type: 'scorpion_skitter', count: 2, spawnDelayMs: 800, spawnSide: 'right' },
         ],
       },
     ],
@@ -527,8 +527,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 3000,
         rewardGold: 50,
         enemies: [
-          { type: 'sand_bandit', count: 4, spawnDelayMs: 800 },
-          { type: 'bandit_archer', count: 2, spawnDelayMs: 1200 },
+          { type: 'sand_bandit', count: 4, spawnDelayMs: 800, spawnSide: 'left' },
+          { type: 'bandit_archer', count: 2, spawnDelayMs: 1200, spawnSide: 'right' },
         ],
       },
       {
@@ -536,8 +536,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 60,
         enemies: [
-          { type: 'bandit_leader', count: 2, spawnDelayMs: 1000 },
-          { type: 'bandit_archer', count: 3, spawnDelayMs: 900 },
+          { type: 'bandit_leader', count: 2, spawnDelayMs: 1000, spawnSide: 'left' },
+          { type: 'bandit_archer', count: 3, spawnDelayMs: 900, spawnSide: 'right' },
         ],
       },
       {
@@ -545,8 +545,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 6000,
         rewardGold: 150,
         enemies: [
-          { type: 'sand_bandit', count: 4, spawnDelayMs: 700 },
-          { type: 'dune_scorpion', count: 1, spawnDelayMs: 3000 },
+          { type: 'sand_bandit', count: 4, spawnDelayMs: 700, spawnSide: 'right' },
+          { type: 'dune_scorpion', count: 1, spawnDelayMs: 3000, spawnSide: 'left' },
         ],
       },
     ],
@@ -572,9 +572,9 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 3000,
         rewardGold: 60,
         enemies: [
-          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1500 },
-          { type: 'sand_wraith', count: 3, spawnDelayMs: 800 },
-          { type: 'bandit_archer', count: 3, spawnDelayMs: 900 },
+          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1500, spawnSide: 'left' },
+          { type: 'sand_wraith', count: 3, spawnDelayMs: 800, spawnSide: 'left' },
+          { type: 'bandit_archer', count: 3, spawnDelayMs: 900, spawnSide: 'right' },
         ],
       },
       {
@@ -582,8 +582,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 80,
         enemies: [
-          { type: 'iron_vanguard', count: 3, spawnDelayMs: 1200 },
-          { type: 'bandit_leader', count: 2, spawnDelayMs: 1000 },
+          { type: 'iron_vanguard', count: 3, spawnDelayMs: 1200, spawnSide: 'right' },
+          { type: 'bandit_leader', count: 2, spawnDelayMs: 1000, spawnSide: 'left' },
         ],
       },
       {
@@ -591,9 +591,10 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 6000,
         rewardGold: 200,
         enemies: [
-          { type: 'iron_vanguard', count: 4, spawnDelayMs: 1000 },
-          { type: 'bandit_warlord', count: 1, spawnDelayMs: 3500 },
-          { type: 'bandit_leader', count: 2, spawnDelayMs: 800 },
+          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1000, spawnSide: 'left' },
+          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1100, spawnSide: 'right' },
+          { type: 'bandit_warlord', count: 1, spawnDelayMs: 3500, spawnSide: 'right' },
+          { type: 'bandit_leader', count: 2, spawnDelayMs: 800, spawnSide: 'left' },
         ],
       },
     ],
@@ -619,8 +620,9 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 3000,
         rewardGold: 80,
         enemies: [
-          { type: 'iron_vanguard', count: 3, spawnDelayMs: 1200 },
-          { type: 'sand_wisp', count: 2, spawnDelayMs: 900 },
+          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1200, spawnSide: 'left' },
+          { type: 'iron_vanguard', count: 1, spawnDelayMs: 1400, spawnSide: 'right' },
+          { type: 'sand_wisp', count: 2, spawnDelayMs: 900, spawnSide: 'right' },
         ],
       },
       {
@@ -628,9 +630,9 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 100,
         enemies: [
-          { type: 'bandit_warlord', count: 1, spawnDelayMs: 2000 },
-          { type: 'camel_raider', count: 3, spawnDelayMs: 700 },
-          { type: 'sand_wraith', count: 3, spawnDelayMs: 600 },
+          { type: 'bandit_warlord', count: 1, spawnDelayMs: 2000, spawnSide: 'left' },
+          { type: 'camel_raider', count: 3, spawnDelayMs: 700, spawnSide: 'right' },
+          { type: 'sand_wraith', count: 3, spawnDelayMs: 600, spawnSide: 'right' },
         ],
       },
       {
@@ -638,8 +640,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 6000,
         rewardGold: 250,
         enemies: [
-          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1000 },
-          { type: 'shadow_emir', count: 1, spawnDelayMs: 3500 },
+          { type: 'iron_vanguard', count: 2, spawnDelayMs: 1000, spawnSide: 'left' },
+          { type: 'shadow_emir', count: 1, spawnDelayMs: 3500, spawnSide: 'right' },
         ],
       },
     ],

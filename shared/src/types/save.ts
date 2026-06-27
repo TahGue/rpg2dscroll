@@ -2,7 +2,17 @@ import type { MissionBoostType } from '../shop/shopItems';
 import { syncMaterialsToInventory } from '../world/materials';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings } from '../input/keyBindings';
 
-export type LionMode = 'follow' | 'guard' | 'aggressive';
+export type LionMode = 'follow' | 'guard' | 'guard_left' | 'guard_right' | 'aggressive';
+
+const LION_MODES: LionMode[] = ['follow', 'guard', 'guard_left', 'guard_right', 'aggressive'];
+
+export const LION_MODE_LABELS: Record<LionMode, string> = {
+  follow: 'Follow Malik',
+  guard: 'Guard Gate',
+  guard_left: 'Guard Left',
+  guard_right: 'Guard Right',
+  aggressive: 'Hunt Foes',
+};
 export type BuildChoice =
   | 'arrow_tower'
   | 'spike_trap'
@@ -167,7 +177,10 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     leather: parsed.leather ?? 0,
     wood: parsed.wood ?? 0,
     selectedBuild: parsed.selectedBuild ?? DEFAULT_SAVE.selectedBuild,
-    lionMode: parsed.lionMode ?? DEFAULT_SAVE.lionMode,
+    lionMode:
+      parsed.lionMode && LION_MODES.includes(parsed.lionMode)
+        ? parsed.lionMode
+        : DEFAULT_SAVE.lionMode,
     ngPlusLevel: parsed.ngPlusLevel ?? 0,
     campaignComplete: parsed.campaignComplete ?? false,
     seenCampDialog: parsed.seenCampDialog ?? false,

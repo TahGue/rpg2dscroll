@@ -128,9 +128,11 @@ export class MissionScene extends Phaser.Scene {
     }
 
     if (this.isShrine) {
-      this.gateX = this.worldWidth * this.defenseLayout.gateXRatio;
-      this.spawnX = 120;
-      this.rightSpawnX = this.worldWidth - 120;
+      if (!wide) {
+        this.gateX = this.worldWidth * this.defenseLayout.gateXRatio;
+        this.spawnX = 120;
+        this.rightSpawnX = this.worldWidth - 120;
+      }
       this.gateLabel = this.defenseLayout.gateLabel ?? 'SACRED SHRINE';
       this.gateTexture = 'shrine';
     }
@@ -239,8 +241,11 @@ export class MissionScene extends Phaser.Scene {
       }
       this.towers.forEach((tower) => tower.update(this.time.now, enemyList.filter((e) => e.isAlive())));
     }
-    const defenseTarget = this.getDefenseTarget();
-    this.lion?.update(this.time.now, enemyList.filter((e) => e.isAlive()), defenseTarget?.x);
+    this.lion?.update(
+      this.time.now,
+      enemyList.filter((e) => e.isAlive()),
+      MissionBridge.getLionAnchorX(this.gateX, this.defenseLayout),
+    );
     this.gateGuard?.update(this.time.now, enemyList);
     this.heroAbilities?.tickCooldownSync(MissionBridge.getActiveHeroId());
     this.hazardManager?.update(this.player, delta);

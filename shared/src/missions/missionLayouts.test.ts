@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getDefenseLayout } from './missionLayouts';
-import { getBuildSocketRatios } from './wideBattlefield';
+import { getBuildSocketRatios, getLionGuardAnchorRatio } from './wideBattlefield';
 
 describe('getDefenseLayout', () => {
   it('returns default layout for unknown missions', () => {
@@ -31,18 +31,20 @@ describe('getDefenseLayout', () => {
     expect(layout.poisonPoolsBetweenWaves?.[1]).toBeDefined();
   });
 
-  it('adds dual build sockets and eclipse darkness for late missions', () => {
-    expect(getDefenseLayout('mission-red-dune-pass').extraSocketXRatios?.length).toBe(1);
+  it('adds wide battlefield and eclipse darkness for late missions', () => {
+    const redDune = getDefenseLayout('mission-red-dune-pass');
+    expect(redDune.wideBattlefield).toBeDefined();
+    expect(redDune.gateXRatio).toBe(0.5);
+    expect(redDune.hazards.some((h) => h.type === 'wind_gust')).toBe(true);
     expect(getDefenseLayout('mission-black-eclipse').eclipseDarkness).toBe(true);
     expect(getDefenseLayout('mission-shadow-emir').eclipseDarkness).toBe(true);
-    const redDune = getDefenseLayout('mission-red-dune-pass');
-    expect(redDune.hazards.some((h) => h.type === 'wind_gust')).toBe(true);
+    expect(getDefenseLayout('mission-broken-watchtower').wideBattlefield).toBeDefined();
   });
 
-  it('configures shrine sanctum dual sockets and prep phase', () => {
+  it('configures shrine sanctum as wide centered battlefield', () => {
     const shrine = getDefenseLayout('mission-shrine-sanctum');
-    expect(shrine.extraSocketXRatios?.length).toBe(1);
-    expect(shrine.prepPhaseMs).toBe(7000);
+    expect(shrine.wideBattlefield).toBeDefined();
+    expect(shrine.gateXRatio).toBe(0.5);
     expect(shrine.gateLabel).toBe('SACRED SHRINE');
   });
 
@@ -69,5 +71,14 @@ describe('getDefenseLayout', () => {
   it('wide Silent Oasis and Scorpion Nest use centered gates', () => {
     expect(getDefenseLayout('mission-silent-oasis').gateXRatio).toBe(0.5);
     expect(getDefenseLayout('mission-scorpion-nest').wideBattlefield).toBeDefined();
+  });
+
+  it('places lion guard anchors on wide battlefield flanks', () => {
+    const layout = getDefenseLayout('mission-night-attack');
+    const wide = layout.wideBattlefield!;
+    expect(getLionGuardAnchorRatio('guard_left', wide)).toBe(wide.leftSocketRatios[1]);
+    expect(getLionGuardAnchorRatio('guard_right', wide)).toBe(wide.rightSocketRatios[1]);
+    expect(getLionGuardAnchorRatio('guard', wide)).toBe(0.5);
+    expect(getLionGuardAnchorRatio('follow', wide)).toBeNull();
   });
 });
