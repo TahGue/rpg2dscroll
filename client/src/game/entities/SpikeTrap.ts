@@ -1,16 +1,20 @@
 import Phaser from 'phaser';
-import { SPIKE_TRAP } from '@malik/shared';
+import { SPIKE_TRAP, getHero } from '@malik/shared';
+import { MissionBridge } from '../systems/MissionBridge';
 import { SoundManager } from '../systems/SoundManager';
 import type { Enemy } from './Enemy';
 
 export class SpikeTrap extends Phaser.GameObjects.Container {
   private lastTrigger = 0;
   private range = SPIKE_TRAP.range;
-  private damage = SPIKE_TRAP.damage;
+  private damage: number;
   private fireRate = SPIKE_TRAP.fireRateMs;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
+    const heroId = MissionBridge.getActiveHeroId();
+    const hero = heroId ? getHero(heroId) : undefined;
+    this.damage = Math.round(SPIKE_TRAP.damage * (hero?.spikeTrapDamageMult ?? 1));
 
     const base = scene.add.image(0, 0, 'spike_trap').setOrigin(0.5, 1);
     this.add(base);

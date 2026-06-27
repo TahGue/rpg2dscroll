@@ -40,5 +40,6 @@ export * from './world/worldMap';
 export * from './overworld/overworldTypes';
 export * from './overworld/worldEvents';
 export * from './overworld/nahranOutskirts';
+export * from './overworld/scorpionValley';
 export * from './overworld/overworldLogic';
 export * from './overworld/npcDialogues';

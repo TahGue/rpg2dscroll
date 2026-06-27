@@ -56,6 +56,26 @@ export interface OverworldPatrol {
   disableAfterMission?: string;
 }
 
+export interface OverworldRegionTransition {
+  id: string;
+  /** Zone top-left in world pixels. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label: string;
+  targetRegionId: string;
+  targetX: number;
+  targetY: number;
+  unlockAfterMission?: string;
+}
+
+export interface OverworldRegionTheme {
+  baseColor: number;
+  accentColor: number;
+  title: string;
+}
+
 export interface OverworldRegion {
   id: string;
   name: string;
@@ -63,9 +83,11 @@ export interface OverworldRegion {
   width: number;
   height: number;
   defaultSpawn: { x: number; y: number };
+  theme: OverworldRegionTheme;
   pois: OverworldPOI[];
   walls: OverworldWall[];
   patrols?: OverworldPatrol[];
+  transitions?: OverworldRegionTransition[];
 }
 
 export type { OverworldPosition } from '../types/save';

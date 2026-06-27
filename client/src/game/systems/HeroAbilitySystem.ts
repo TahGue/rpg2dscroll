@@ -27,6 +27,13 @@ export class HeroAbilitySystem {
       return true;
     }
 
+    if (heroId === 'hamza') {
+      this.fireBurningLine(playerX, playerY, facing, hero.activeRange, hero.activeDamage, enemies);
+      this.lastUsed = now;
+      MissionBridge.syncHeroAbilityCooldown(0);
+      return true;
+    }
+
     if (heroId === 'yusuf' && hero.activeHeal) {
       this.healingSpring(playerX, playerY, hero.activeHeal);
       this.lastUsed = now;
@@ -82,6 +89,48 @@ export class HeroAbilitySystem {
       .text(playerX + dir * 80, lineY - 70, 'ARROW RAIN', {
         fontSize: '16px',
         color: '#ffdd88',
+        fontFamily: 'Georgia, serif',
+        stroke: '#1a1428',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(200);
+    this.scene.time.delayedCall(900, () => banner.destroy());
+  }
+
+  private fireBurningLine(
+    playerX: number,
+    playerY: number,
+    facing: number,
+    range: number,
+    damage: number,
+    enemies: Enemy[],
+  ): void {
+    SoundManager.play('attack');
+    const dir = facing >= 0 ? 1 : -1;
+    const lineY = playerY - 28;
+
+    const flash = this.scene.add
+      .rectangle(playerX, lineY - 20, range, 10, 0xff6622, 0.45)
+      .setOrigin(dir > 0 ? 0 : 1, 0.5)
+      .setDepth(15);
+    this.scene.tweens.add({ targets: flash, alpha: 0, duration: 550, onComplete: () => flash.destroy() });
+
+    for (const enemy of enemies) {
+      if (!enemy.isAlive()) continue;
+      const inLine =
+        dir > 0
+          ? enemy.x >= playerX && enemy.x <= playerX + range
+          : enemy.x <= playerX && enemy.x >= playerX - range;
+      if (inLine && Math.abs(enemy.y - lineY) < 55) {
+        enemy.takeDamage(damage, dir);
+      }
+    }
+
+    const banner = this.scene.add
+      .text(playerX + dir * 80, lineY - 70, 'BURNING LINE', {
+        fontSize: '16px',
+        color: '#ff8844',
         fontFamily: 'Georgia, serif',
         stroke: '#1a1428',
         strokeThickness: 3,

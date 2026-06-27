@@ -32,6 +32,15 @@ export const OVERWORLD_NPCS: Record<string, OverworldNpcDialogue> = {
       'Stand with us — defend the well and caravans will remember Nahran.',
     ],
   },
+  hamza_trapper: {
+    id: 'hamza_trapper',
+    name: 'Hamza the Fire Trapper',
+    lines: [
+      'These scorpions fear flame more than steel. I lay traps along the canyon rim.',
+      'The nest below poisons every pool. Hold the barricade and burn what crawls out.',
+      'Walk with me — my oil line will scorch a path when the swarm breaks cover.',
+    ],
+  },
 };
 
 export function getOverworldNpcDialogue(npcId: string): OverworldNpcDialogue | undefined {

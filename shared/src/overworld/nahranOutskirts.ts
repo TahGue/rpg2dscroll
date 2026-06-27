@@ -8,6 +8,25 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
   width: 2200,
   height: 1700,
   defaultSpawn: { x: 520, y: 1280 },
+  theme: {
+    baseColor: 0xc4a35a,
+    accentColor: 0xb8956a,
+    title: 'Nahran Outskirts',
+  },
+  transitions: [
+    {
+      id: 'transition-to-scorpion-valley',
+      x: 1180,
+      y: 1540,
+      w: 220,
+      h: 130,
+      label: 'Enter Scorpion Valley',
+      targetRegionId: 'scorpion-valley',
+      targetX: 600,
+      targetY: 140,
+      unlockAfterMission: 'mission-silent-oasis',
+    },
+  ],
   walls: [
     // Map edge only — walk freely across the open desert
     { x: 0, y: 0, w: 2200, h: 24 },
@@ -137,6 +156,16 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
       revealAfterMission: 'mission-red-dune-pass',
     },
     {
+      id: 'poi-caravan-road',
+      kind: 'mission',
+      x: 1420,
+      y: 1020,
+      radius: 85,
+      label: 'Trade Road',
+      missionId: 'mission-caravan-escort',
+      revealAfterMission: 'mission-bandit-road',
+    },
+    {
       id: 'poi-red-dune-gate',
       kind: 'locked_gate',
       x: 1280,
@@ -184,8 +213,11 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
   ],
 };
 
+import { SCORPION_VALLEY } from './scorpionValley';
+
 export const OVERWORLD_REGIONS: Record<string, OverworldRegion> = {
   'nahran-outskirts': NAHRAN_OUTSKIRTS,
+  'scorpion-valley': SCORPION_VALLEY,
 };
 
 export function getOverworldRegion(id: string): OverworldRegion {

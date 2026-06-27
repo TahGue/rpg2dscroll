@@ -18,6 +18,8 @@ export interface HeroDefinition {
   activeRange: number;
   /** Active ability heal amount (Yusuf). */
   activeHeal?: number;
+  /** Passive: multiply spike trap damage. */
+  spikeTrapDamageMult?: number;
 }
 
 export const AISHA: HeroDefinition = {
@@ -51,9 +53,25 @@ export const YUSUF: HeroDefinition = {
   activeHeal: 85,
 };
 
+export const HAMZA: HeroDefinition = {
+  id: 'hamza',
+  name: 'Hamza',
+  title: 'Fire Trapper',
+  region: 'scorpion-valley',
+  role: 'Trap specialist',
+  passiveDescription: 'Spike traps deal 25% more damage.',
+  activeDescription: 'Scorches enemies in a line ahead with burning oil.',
+  activeName: 'Burning Line',
+  spikeTrapDamageMult: 1.25,
+  activeCooldownMs: 13000,
+  activeDamage: 32,
+  activeRange: 480,
+};
+
 export const HEROES: Record<string, HeroDefinition> = {
   aisha: AISHA,
   yusuf: YUSUF,
+  hamza: HAMZA,
 };
 
 export const MISSION_HERO_PREFERENCE: Partial<Record<PrepMissionId, string>> = {

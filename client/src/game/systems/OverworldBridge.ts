@@ -161,4 +161,8 @@ export class OverworldBridge {
     this.persistIfDue(updated, true);
     return true;
   }
+
+  static travelToRegion(targetRegionId: string, targetX: number, targetY: number): void {
+    useGameStore.getState().travelToOverworldRegion(targetRegionId, targetX, targetY);
+  }
 }

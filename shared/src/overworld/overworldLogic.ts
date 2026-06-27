@@ -1,5 +1,5 @@
 import type { LocalSaveData } from '../types/save';
-import type { OverworldPOI, OverworldPatrol, OverworldRegion } from './overworldTypes';
+import type { OverworldPOI, OverworldPatrol, OverworldRegion, OverworldRegionTransition } from './overworldTypes';
 
 export const OVERWORLD_CELL_SIZE = 100;
 export const OVERWORLD_EXPLORE_RADIUS = 130;
@@ -68,7 +68,7 @@ export function isOverworldCellExplored(
 }
 
 export function getOverworldQuestHint(
-  save: Pick<LocalSaveData, 'completedMissions' | 'recruitedHeroes' | 'unlockedBlueprints'>,
+  save: Pick<LocalSaveData, 'completedMissions' | 'recruitedHeroes' | 'unlockedBlueprints' | 'visitedOverworldRegions'>,
 ): string {
   const done = save.completedMissions;
   if (!save.recruitedHeroes.includes('aisha')) {
@@ -86,6 +86,15 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-silent-oasis')) {
     return 'Follow the north road to Silent Oasis and protect the well';
   }
+  if (!save.visitedOverworldRegions.includes('scorpion-valley')) {
+    return 'March south through Red Dune Pass into Scorpion Valley';
+  }
+  if (!save.recruitedHeroes.includes('hamza')) {
+    return 'Recruit Hamza the Fire Trapper at Valley Camp';
+  }
+  if (!done.includes('mission-scorpion-nest')) {
+    return 'Descend to the Scorpion Nest and hold the barricade';
+  }
   if (!done.includes('mission-red-dune-pass')) {
     return 'March south through Red Dune Pass and hold the choke point';
   }
@@ -95,7 +104,49 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-bandit-road')) {
     return 'Optional: clear Bandit Road ambushes for gold and leather';
   }
-  return 'Explore the outskirts — new regions await beyond the dunes';
+  return 'Explore the valley — Sentinel Road opens after the nest falls';
+}
+
+export function isRegionTransitionUnlocked(
+  transition: OverworldRegionTransition,
+  save: Pick<LocalSaveData, 'completedMissions'>,
+): boolean {
+  if (!transition.unlockAfterMission) return true;
+  return save.completedMissions.includes(transition.unlockAfterMission);
+}
+
+export function getActiveRegionTransitions(
+  region: OverworldRegion,
+  save: Pick<LocalSaveData, 'completedMissions'>,
+): OverworldRegionTransition[] {
+  return (region.transitions ?? []).filter((t) => isRegionTransitionUnlocked(t, save));
+}
+
+export function getRegionTransitionAtPoint(
+  region: OverworldRegion,
+  x: number,
+  y: number,
+  save: Pick<LocalSaveData, 'completedMissions'>,
+): OverworldRegionTransition | null {
+  for (const transition of getActiveRegionTransitions(region, save)) {
+    if (x >= transition.x && x <= transition.x + transition.w && y >= transition.y && y <= transition.y + transition.h) {
+      return transition;
+    }
+  }
+  return null;
+}
+
+export function getRegionTransitionHint(
+  transition: OverworldRegionTransition,
+  save: Pick<LocalSaveData, 'completedMissions'>,
+): string {
+  if (!isRegionTransitionUnlocked(transition, save)) {
+    if (transition.unlockAfterMission === 'mission-silent-oasis') {
+      return 'Locked — save the Silent Oasis first';
+    }
+    return 'Path blocked — complete earlier defenses first';
+  }
+  return transition.label;
 }
 
 export function isOverworldPatrolActive(
@@ -137,7 +188,9 @@ export function getOverworldPOIInteractHint(
 ): string {
   if (!isOverworldPOIVisible(poi, save)) return '';
   if (poi.kind === 'locked_gate' && poi.unlockAfterMission && !save.completedMissions.includes(poi.unlockAfterMission)) {
-    return 'Locked — save the Silent Oasis first';
+    if (poi.unlockAfterMission === 'mission-silent-oasis') return 'Locked — save the Silent Oasis first';
+    if (poi.unlockAfterMission === 'mission-scorpion-nest') return 'Locked — clear the Scorpion Nest first';
+    return 'Locked — finish earlier defenses first';
   }
   switch (poi.kind) {
     case 'camp_hub':
@@ -167,7 +220,9 @@ export function getOverworldPOIInteractHint(
           : 'Tracks faded into the sand'
         : poi.eventId === 'broken_caravan'
           ? 'Investigate wreckage'
-          : 'Investigate tracks';
+          : poi.eventId === 'poison_pools'
+            ? 'Study the poison pools'
+            : 'Investigate tracks';
     default:
       return poi.label;
   }

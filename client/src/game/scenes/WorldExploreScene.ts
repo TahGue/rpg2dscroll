@@ -9,9 +9,14 @@ import {
   isOverworldCellExplored,
   getOverworldNpcDialogue,
   getMissionById,
+  getRegionTransitionAtPoint,
+  getRegionTransitionHint,
+  isRegionTransitionUnlocked,
   OVERWORLD_CELL_SIZE,
   type OverworldPOI,
   type OverworldPatrol,
+  type OverworldRegion,
+  type OverworldRegionTransition,
 } from '@malik/shared';
 import { OverworldPlayer } from '../entities/OverworldPlayer';
 import { OverworldPatrolSprite } from '../entities/OverworldPatrolSprite';
@@ -28,8 +33,10 @@ export class WorldExploreScene extends Phaser.Scene {
   private patrolSprites = new Map<string, OverworldPatrolSprite>();
   private fogGraphics!: Phaser.GameObjects.Graphics;
   private nearestPoi: OverworldPOI | null = null;
+  private nearestTransition: OverworldRegionTransition | null = null;
   private regionId = 'nahran-outskirts';
   private patrolTouchCooldown = new Map<string, number>();
+  private transitionCooldownUntil = 0;
   private regionWidth = 2200;
   private regionHeight = 1700;
 
@@ -51,7 +58,7 @@ export class WorldExploreScene extends Phaser.Scene {
       : region.defaultSpawn;
 
     this.buildTerrain(region);
-    this.buildRoads();
+    this.buildRoads(region);
     this.buildLandmarks(region);
 
     this.fogGraphics = this.add.graphics().setDepth(40);
@@ -96,7 +103,9 @@ export class WorldExploreScene extends Phaser.Scene {
       || state.overworldDialog
       || state.overworldMissionOffer
       || state.pendingActBanner
-      || state.overworldMapOpen,
+      || state.overworldMapOpen
+      || state.overworldRecruitOffer
+      || state.overworldEventChoice,
     );
   }
 
@@ -136,6 +145,7 @@ export class WorldExploreScene extends Phaser.Scene {
     }
 
     this.checkPatrolTouches(time);
+    this.checkRegionTransitions(time);
     this.updateNearestPOI();
 
     if (this.player.wantsInteract() && this.nearestPoi) {
@@ -221,6 +231,19 @@ export class WorldExploreScene extends Phaser.Scene {
     }
   }
 
+  private checkRegionTransitions(time: number): void {
+    if (this.isMovementBlocked() || time < this.transitionCooldownUntil) return;
+
+    const save = useGameStore.getState().save;
+    const region = getOverworldRegion(this.regionId);
+    const transition = getRegionTransitionAtPoint(region, this.player.x, this.player.y, save);
+    if (!transition || !isRegionTransitionUnlocked(transition, save)) return;
+
+    this.transitionCooldownUntil = time + 1800;
+    SoundManager.play('click');
+    OverworldBridge.travelToRegion(transition.targetRegionId, transition.targetX, transition.targetY);
+  }
+
   private updateNearestPOI(): void {
     const save = useGameStore.getState().save;
     const region = getOverworldRegion(this.regionId);
@@ -239,13 +262,32 @@ export class WorldExploreScene extends Phaser.Scene {
 
     if (nearest?.id !== this.nearestPoi?.id) {
       this.nearestPoi = nearest;
+      this.nearestTransition = null;
       if (nearest) {
         OverworldBridge.markPOIVisited(nearest.id);
         const hint = getOverworldPOIInteractHint(nearest, save);
         OverworldBridge.setInteractPrompt(hint ? `[E] ${hint}` : null, nearest);
       } else {
-        OverworldBridge.setInteractPrompt(null, null);
+        this.updateTransitionPrompt(save, region);
       }
+    } else if (!nearest) {
+      this.updateTransitionPrompt(save, region);
+    }
+  }
+
+  private updateTransitionPrompt(
+    save: ReturnType<typeof useGameStore.getState>['save'],
+    region: OverworldRegion,
+  ): void {
+    const transition = getRegionTransitionAtPoint(region, this.player.x, this.player.y, save);
+    if (transition?.id === this.nearestTransition?.id) return;
+
+    this.nearestTransition = transition;
+    if (transition) {
+      const hint = getRegionTransitionHint(transition, save);
+      OverworldBridge.setInteractPrompt(hint, null);
+    } else if (!this.nearestPoi) {
+      OverworldBridge.setInteractPrompt(null, null);
     }
   }
 
@@ -278,6 +320,13 @@ export class WorldExploreScene extends Phaser.Scene {
             save.completedMissions.includes('mission-night-attack')
           ) {
             useGameStore.setState({ overworldRecruitOffer: { heroId: 'yusuf' } });
+            break;
+          }
+        }
+        if (poi.npcId === 'hamza_trapper') {
+          const save = useGameStore.getState().save;
+          if (!save.recruitedHeroes.includes('hamza')) {
+            useGameStore.setState({ overworldRecruitOffer: { heroId: 'hamza' } });
             break;
           }
         }
@@ -394,34 +443,58 @@ export class WorldExploreScene extends Phaser.Scene {
     return container;
   }
 
-  private buildTerrain(region: { width: number; height: number }): void {
-    this.add.rectangle(region.width / 2, region.height / 2, region.width, region.height, 0xc4a35a);
-    for (let i = 0; i < 80; i++) {
+  private buildTerrain(region: OverworldRegion): void {
+    const { baseColor, accentColor } = region.theme;
+    this.add.rectangle(region.width / 2, region.height / 2, region.width, region.height, baseColor);
+    const blobCount = region.id === 'scorpion-valley' ? 60 : 80;
+    for (let i = 0; i < blobCount; i++) {
       const x = Phaser.Math.Between(40, region.width - 40);
       const y = Phaser.Math.Between(40, region.height - 40);
-      this.add.ellipse(x, y, Phaser.Math.Between(30, 90), Phaser.Math.Between(20, 50), 0xb8956a, 0.25);
+      this.add.ellipse(x, y, Phaser.Math.Between(30, 90), Phaser.Math.Between(20, 50), accentColor, 0.25);
+    }
+    if (region.id === 'scorpion-valley') {
+      for (const wall of region.walls.filter((w) => w.w < 200)) {
+        this.add.ellipse(wall.x + wall.w / 2, wall.y + wall.h / 2, wall.w, wall.h, 0x44aa66, 0.35).setDepth(2);
+      }
     }
   }
 
-  private buildRoads(): void {
-    const roadColor = 0xd4b86a;
+  private buildRoads(region: OverworldRegion): void {
     const g = this.add.graphics();
+    g.setDepth(1);
+    if (region.id === 'scorpion-valley') {
+      const roadColor = 0x9a8568;
+      g.fillStyle(roadColor, 0.85);
+      g.fillRoundedRect(580, 120, 48, 220, 8);
+      g.fillRoundedRect(580, 320, 420, 40, 8);
+      g.fillRoundedRect(920, 360, 48, 860, 8);
+      g.fillRoundedRect(300, 600, 200, 40, 8);
+      return;
+    }
+    const roadColor = 0xd4b86a;
     g.fillStyle(roadColor, 0.85);
     g.fillRoundedRect(440, 1180, 720, 48, 8);
     g.fillRoundedRect(700, 520, 48, 720, 8);
     g.fillRoundedRect(900, 480, 400, 48, 8);
     g.fillRoundedRect(1500, 880, 48, 200, 8);
     g.fillRoundedRect(1040, 180, 48, 360, 8);
-    g.setDepth(1);
+    g.fillRoundedRect(1180, 1480, 220, 48, 8);
   }
 
-  private buildLandmarks(region: { width: number; height: number }): void {
-    this.add.image(480, 1220, 'dune_mid').setOrigin(0.5, 1).setTint(0x8b6914).setScale(1.2);
-    this.add.image(1100, 500, 'palm_tree').setOrigin(0.5, 1).setScale(1.4).setDepth(3);
-    this.add.image(1100, 190, 'dune_far').setOrigin(0.5, 1).setTint(0x706050).setScale(1.5).setDepth(2);
-    this.add.rectangle(920, 1140, 80, 60, 0x696969, 0.9).setDepth(4);
-    this.add.text(920, 1100, 'GATE', { fontSize: '10px', color: '#d4a843' }).setOrigin(0.5).setDepth(5);
-    this.add.text(region.width / 2, 36, 'Nahran Outskirts', {
+  private buildLandmarks(region: OverworldRegion): void {
+    if (region.id === 'scorpion-valley') {
+      this.add.image(620, 300, 'dune_mid').setOrigin(0.5, 1).setTint(0x5a4030).setScale(1.1).setDepth(3);
+      this.add.image(980, 1150, 'dune_far').setOrigin(0.5, 1).setTint(0x4a3828).setScale(1.3).setDepth(2);
+      this.add.rectangle(1680, 820, 60, 80, 0x555555, 0.9).setDepth(4);
+      this.add.text(1680, 780, 'SENTINEL', { fontSize: '9px', color: '#aa8866' }).setOrigin(0.5).setDepth(5);
+    } else {
+      this.add.image(480, 1220, 'dune_mid').setOrigin(0.5, 1).setTint(0x8b6914).setScale(1.2);
+      this.add.image(1100, 500, 'palm_tree').setOrigin(0.5, 1).setScale(1.4).setDepth(3);
+      this.add.image(1100, 190, 'dune_far').setOrigin(0.5, 1).setTint(0x706050).setScale(1.5).setDepth(2);
+      this.add.rectangle(920, 1140, 80, 60, 0x696969, 0.9).setDepth(4);
+      this.add.text(920, 1100, 'GATE', { fontSize: '10px', color: '#d4a843' }).setOrigin(0.5).setDepth(5);
+    }
+    this.add.text(region.width / 2, 36, region.theme.title, {
       fontSize: '22px',
       color: '#d4a843',
       fontFamily: 'Georgia, serif',

@@ -69,6 +69,8 @@ export interface LocalSaveData {
   prepUseGateGuard: boolean;
   /** Defense skill tree — Phase 1 uses build_speed, repair_speed, cheaper_towers. */
   defenseSkills: Record<string, number>;
+  /** Regions the player has entered at least once. */
+  visitedOverworldRegions: string[];
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -134,6 +136,7 @@ export const DEFAULT_SAVE: LocalSaveData = {
     repair_speed: 0,
     cheaper_towers: 0,
   },
+  visitedOverworldRegions: ['nahran-outskirts'],
 };
 
 export const SAVE_KEY = 'malik-desert-defense-save';
@@ -180,6 +183,7 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     unlockedBlueprints: parsed.unlockedBlueprints ?? DEFAULT_SAVE.unlockedBlueprints,
     prepUseGateGuard: parsed.prepUseGateGuard ?? true,
     defenseSkills: { ...DEFAULT_SAVE.defenseSkills, ...parsed.defenseSkills },
+    visitedOverworldRegions: parsed.visitedOverworldRegions ?? DEFAULT_SAVE.visitedOverworldRegions,
   };
   return {
     ...base,

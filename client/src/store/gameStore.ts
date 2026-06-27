@@ -246,6 +246,7 @@ interface GameStore {
   setOverworldMapOpen: (open: boolean) => void;
   toggleOverworldMap: () => void;
   fastTravelTo: (poiId: string) => boolean;
+  travelToOverworldRegion: (targetRegionId: string, targetX: number, targetY: number) => void;
 }
 
 const defaultMissionState = (): MissionRuntimeState => ({
@@ -468,6 +469,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
       overworldCampOpen: false,
     });
     return true;
+  },
+
+  travelToOverworldRegion: (targetRegionId, targetX, targetY) => {
+    const { save } = get();
+    const region = getOverworldRegion(targetRegionId);
+    const visited = save.visitedOverworldRegions.includes(targetRegionId)
+      ? save.visitedOverworldRegions
+      : [...save.visitedOverworldRegions, targetRegionId];
+
+    let unlockedMissions = save.unlockedMissions;
+    if (targetRegionId === 'scorpion-valley' && save.completedMissions.includes('mission-silent-oasis')) {
+      for (const loc of ['scorpion-nest', 'iron-vein']) {
+        if (!unlockedMissions.includes(loc)) {
+          unlockedMissions = [...unlockedMissions, loc];
+        }
+      }
+    }
+
+    const updated = {
+      ...save,
+      overworldPosition: { regionId: targetRegionId, x: targetX, y: targetY },
+      visitedOverworldRegions: visited,
+      unlockedMissions,
+    };
+    persistSave(updated);
+    set({
+      save: updated,
+      overworldLivePosition: { x: targetX, y: targetY },
+      overworldUnlockToast: `Entered ${region.name}`,
+    });
+    window.setTimeout(() => set({ overworldUnlockToast: null }), 4500);
   },
 
   abortMission: () => {
