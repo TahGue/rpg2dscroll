@@ -1,0 +1,131 @@
+import Phaser from 'phaser';
+import { isBuildUnlocked } from '@malik/shared';
+import { MissionBridge } from '../systems/MissionBridge';
+import { SoundManager } from '../systems/SoundManager';
+import { ArrowTower } from './ArrowTower';
+import { SpikeTrap } from './SpikeTrap';
+import { Barricade } from './Barricade';
+import { RepairStation } from './RepairStation';
+import { IronTower } from './IronTower';
+import { LionDen } from './LionDen';
+import type { Player } from './Player';
+
+export type BuiltStructure =
+  | ArrowTower
+  | SpikeTrap
+  | Barricade
+  | RepairStation
+  | IronTower
+  | LionDen;
+
+export class BuildSocket extends Phaser.GameObjects.Container {
+  private built = false;
+  private hintText?: Phaser.GameObjects.Text;
+  private platform: Phaser.GameObjects.Image;
+
+  constructor(scene: Phaser.Scene, x: number, y: number) {
+    super(scene, x, y);
+
+    this.platform = scene.add.image(0, 0, 'build_socket').setOrigin(0.5, 1);
+    this.add(this.platform);
+
+    scene.add.existing(this);
+    this.setDepth(4);
+  }
+
+  isBuilt(): boolean {
+    return this.built;
+  }
+
+  updateHint(player: Player): void {
+    if (this.built) return;
+
+    const build = MissionBridge.getSelectedBuild();
+    const ctx = MissionBridge.getBuildUnlockContext();
+    const locked = !isBuildUnlocked(build.id as Parameters<typeof isBuildUnlocked>[0], ctx);
+
+    if (!this.hintText) {
+      this.hintText = this.scene.add
+        .text(0, -70, '', {
+          fontSize: '11px',
+          color: '#d4a843',
+          fontFamily: 'Georgia, serif',
+          backgroundColor: '#000000aa',
+          padding: { x: 6, y: 3 },
+        })
+        .setOrigin(0.5)
+        .setVisible(false);
+      this.add(this.hintText);
+    }
+
+    const near = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y) < 90;
+    this.hintText.setVisible(near);
+
+    if (locked) {
+      this.hintText.setText(`[B] ${build.name} (locked)`);
+      this.hintText.setColor('#ff6666');
+      return;
+    }
+
+    const parts = [`${build.goldCost}g`];
+    if (build.woodCost > 0) parts.push(`${build.woodCost} wood`);
+    if (build.ironCost > 0) parts.push(`${build.ironCost} iron`);
+    this.hintText.setText(`[B] ${build.name} (${parts.join(' + ')})`);
+
+    const save = MissionBridge.getSaveSnapshot();
+    const canAfford =
+      MissionBridge.getGoldCollected() >= build.goldCost &&
+      (build.ironCost <= 0 || (save.iron ?? 0) >= build.ironCost) &&
+      (build.woodCost <= 0 || (save.wood ?? 0) >= build.woodCost);
+    this.hintText.setColor(canAfford ? '#d4a843' : '#ff6666');
+  }
+
+  tryBuild(): BuiltStructure | null {
+    if (this.built) return null;
+
+    const build = MissionBridge.getSelectedBuild();
+    const ctx = MissionBridge.getBuildUnlockContext();
+    if (!isBuildUnlocked(build.id as Parameters<typeof isBuildUnlocked>[0], ctx)) return null;
+
+    if (!MissionBridge.spendMissionGold(build.goldCost)) return null;
+
+    const save = MissionBridge.getSaveSnapshot();
+    if (build.ironCost > 0) {
+      if ((save.iron ?? 0) < build.ironCost) {
+        MissionBridge.addGold(build.goldCost);
+        return null;
+      }
+      MissionBridge.spendSaveIron(build.ironCost);
+    }
+
+    if (build.woodCost > 0) {
+      const current = MissionBridge.getSaveSnapshot();
+      if ((current.wood ?? 0) < build.woodCost) {
+        MissionBridge.addGold(build.goldCost);
+        if (build.ironCost > 0) MissionBridge.refundSaveIron(build.ironCost);
+        return null;
+      }
+      MissionBridge.spendSaveWood(build.woodCost);
+    }
+
+    this.built = true;
+    this.platform.setVisible(false);
+    this.hintText?.destroy();
+    SoundManager.play('build');
+
+    switch (build.id) {
+      case 'spike_trap':
+        return new SpikeTrap(this.scene, this.x, this.y);
+      case 'barricade':
+        return new Barricade(this.scene, this.x, this.y);
+      case 'repair_station':
+        return new RepairStation(this.scene, this.x, this.y);
+      case 'iron_tower':
+        return new IronTower(this.scene, this.x, this.y);
+      case 'lion_den':
+        return new LionDen(this.scene, this.x, this.y);
+      default:
+        return new ArrowTower(this.scene, this.x, this.y);
+    }
+  }
+}

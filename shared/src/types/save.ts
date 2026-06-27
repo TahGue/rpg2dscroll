@@ -1,0 +1,140 @@
+import type { MissionBoostType } from '../shop/shopItems';
+import { syncMaterialsToInventory } from '../world/materials';
+import { DEFAULT_KEY_BINDINGS, type KeyBindings } from '../input/keyBindings';
+
+export type LionMode = 'follow' | 'guard' | 'aggressive';
+export type BuildChoice =
+  | 'arrow_tower'
+  | 'spike_trap'
+  | 'barricade'
+  | 'repair_station'
+  | 'iron_tower'
+  | 'lion_den';
+
+export interface GameSettings {
+  musicVolume: number;
+  sfxVolume: number;
+  showDamageNumbers: boolean;
+  keyBindings: KeyBindings;
+}
+
+export interface LocalSaveData {
+  version: number;
+  gold: number;
+  water: number;
+  iron: number;
+  leather: number;
+  wood: number;
+  xp: number;
+  level: number;
+  completedMissions: string[];
+  unlockedMissions: string[];
+  bestScores: Record<string, number>;
+  achievements: string[];
+  unlockedLore: string[];
+  restBonusActive: boolean;
+  missionBoost: MissionBoostType | null;
+  collectedResources: string[];
+  seenActs: string[];
+  seenCampDialog: boolean;
+  upgrades: Record<string, number>;
+  campUpgrades: Record<string, number>;
+  relicLevels: Record<string, number>;
+  inventory: Record<string, number>;
+  selectedBuild: BuildChoice;
+  lionMode: LionMode;
+  ngPlusLevel: number;
+  campaignComplete: boolean;
+  settings: GameSettings;
+  lastPlayedAt: string;
+}
+
+export const DEFAULT_SETTINGS: GameSettings = {
+  musicVolume: 0.7,
+  sfxVolume: 0.8,
+  showDamageNumbers: true,
+  keyBindings: DEFAULT_KEY_BINDINGS,
+};
+
+export const DEFAULT_SAVE: LocalSaveData = {
+  version: 2,
+  gold: 0,
+  water: 0,
+  iron: 0,
+  leather: 0,
+  wood: 0,
+  xp: 0,
+  level: 1,
+  completedMissions: [],
+  unlockedMissions: ['nahran-camp', 'night-attack'],
+  bestScores: {},
+  achievements: [],
+  unlockedLore: ['lore-nahran'],
+  restBonusActive: false,
+  missionBoost: null,
+  collectedResources: [],
+  seenActs: [],
+  seenCampDialog: false,
+  upgrades: {
+    sword_damage: 1,
+    malik_hp: 1,
+    gate_hp: 1,
+    malik_speed: 1,
+    block_strength: 1,
+    repair_speed: 1,
+    tower_damage: 1,
+    lion_level: 0,
+    sand_slash: 0,
+    bow_level: 0,
+    spear_level: 0,
+  },
+  campUpgrades: {},
+  relicLevels: {},
+  inventory: {},
+  selectedBuild: 'arrow_tower',
+  lionMode: 'guard',
+  ngPlusLevel: 0,
+  campaignComplete: false,
+  settings: DEFAULT_SETTINGS,
+  lastPlayedAt: new Date().toISOString(),
+};
+
+export const SAVE_KEY = 'malik-desert-defense-save';
+
+/** Merge persisted save with defaults so new fields always exist after updates. */
+export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
+  const base: LocalSaveData = {
+    ...DEFAULT_SAVE,
+    ...parsed,
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...parsed.settings,
+      keyBindings: { ...DEFAULT_SETTINGS.keyBindings, ...parsed.settings?.keyBindings },
+    },
+    upgrades: { ...DEFAULT_SAVE.upgrades, ...parsed.upgrades },
+    campUpgrades: { ...DEFAULT_SAVE.campUpgrades, ...parsed.campUpgrades },
+    relicLevels: { ...DEFAULT_SAVE.relicLevels, ...parsed.relicLevels },
+    inventory: { ...DEFAULT_SAVE.inventory, ...parsed.inventory },
+    bestScores: parsed.bestScores ?? {},
+    achievements: parsed.achievements ?? [],
+    unlockedLore: parsed.unlockedLore ?? DEFAULT_SAVE.unlockedLore,
+    collectedResources: parsed.collectedResources ?? [],
+    seenActs: parsed.seenActs ?? [],
+    restBonusActive: parsed.restBonusActive ?? false,
+    missionBoost: parsed.missionBoost ?? null,
+    water: parsed.water ?? 0,
+    iron: parsed.iron ?? 0,
+    leather: parsed.leather ?? 0,
+    wood: parsed.wood ?? 0,
+    selectedBuild: parsed.selectedBuild ?? DEFAULT_SAVE.selectedBuild,
+    lionMode: parsed.lionMode ?? DEFAULT_SAVE.lionMode,
+    ngPlusLevel: parsed.ngPlusLevel ?? 0,
+    campaignComplete: parsed.campaignComplete ?? false,
+    seenCampDialog: parsed.seenCampDialog ?? false,
+    version: parsed.version ?? DEFAULT_SAVE.version,
+  };
+  return {
+    ...base,
+    inventory: syncMaterialsToInventory(base),
+  };
+}
