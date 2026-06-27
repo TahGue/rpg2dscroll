@@ -45,13 +45,16 @@ describe('overworld logic', () => {
     );
   });
 
-  it('reveals watchtower after red dune pass', () => {
-    const save = { ...DEFAULT_SAVE, completedMissions: ['mission-night-attack', 'mission-silent-oasis'] };
-    const tower = NAHRAN_OUTSKIRTS.pois.find((p) => p.id === 'poi-broken-watchtower')!;
-    expect(isOverworldPOIVisible(tower, save)).toBe(false);
+  it('places broken watchtower only in scorpion valley', () => {
+    expect(NAHRAN_OUTSKIRTS.pois.some((p) => p.missionId === 'mission-broken-watchtower')).toBe(false);
+    expect(SCORPION_VALLEY.pois.some((p) => p.missionId === 'mission-broken-watchtower')).toBe(true);
+  });
 
-    const after = { ...save, completedMissions: [...save.completedMissions, 'mission-red-dune-pass'] };
-    expect(isOverworldPOIVisible(tower, after)).toBe(true);
+  it('marks red dune pass as optional side defense on Nahran', () => {
+    const gate = NAHRAN_OUTSKIRTS.pois.find((p) => p.id === 'poi-red-dune-gate')!;
+    expect(gate.label).toContain('Optional');
+    const save = { ...DEFAULT_SAVE, completedMissions: ['mission-night-attack', 'mission-silent-oasis'] };
+    expect(isOverworldPOIUnlocked(gate, save)).toBe(true);
   });
 
   it('explores cells near the player', () => {

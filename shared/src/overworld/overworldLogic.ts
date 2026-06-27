@@ -173,7 +173,7 @@ export function getOverworldQuestHint(
     return 'Optional: escort the trade caravan before marching south';
   }
   if (!save.visitedOverworldRegions.includes('scorpion-valley')) {
-    return 'March south through Red Dune Pass into Scorpion Valley';
+    return 'March south from Nahran into Scorpion Valley — the Broken Watchtower lies east in the canyon';
   }
   if (!save.recruitedHeroes.includes('hamza')) {
     return 'Recruit Hamza the Fire Trapper at Valley Camp';
@@ -200,7 +200,7 @@ export function getOverworldQuestHint(
     return 'Assault the Shadow Emir Fortress — the campaign finale';
   }
   if (!done.includes('mission-red-dune-pass')) {
-    return 'Optional: hold Red Dune Pass on the Nahran road';
+    return 'Optional: hold Red Dune Pass on the Nahran road for barricade blueprints';
   }
   if (!done.includes('mission-bandit-road')) {
     return 'Optional: clear Bandit Road ambushes for gold and leather';
@@ -320,8 +320,11 @@ export function getOverworldPOIInteractHint(
     case 'camp_hub':
       return 'Open camp menu';
     case 'mission':
-      return save.completedMissions.includes(poi.missionId ?? '')
-        ? `Replay: ${poi.label}`
+      if (save.completedMissions.includes(poi.missionId ?? '')) {
+        return `Replay: ${poi.label}`;
+      }
+      return poi.label.includes('Optional')
+        ? `Optional defense: ${poi.label.replace(' (Optional)', '')}`
         : `Start defense: ${poi.label}`;
     case 'npc':
       return `Talk to ${poi.label}`;
@@ -336,6 +339,9 @@ export function getOverworldPOIInteractHint(
     case 'ambush':
       return `Enter ${poi.label}`;
     case 'locked_gate':
+      if (poi.label.includes('Optional')) {
+        return `Optional defense: ${poi.label.replace(' (Optional)', '')}`;
+      }
       return `Enter ${poi.label}`;
     case 'event':
       return save.completedOverworldEvents.includes(poi.id)

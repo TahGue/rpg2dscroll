@@ -12,6 +12,7 @@ export const OVERWORLD_NPCS: Record<string, OverworldNpcDialogue> = {
       'The dunes are too quiet tonight, Malik.',
       'When the hyenas stop howling, men should prepare their gates.',
       'Walk east to the Nahran Gate — the guard will need you before sunrise.',
+      'Once the oasis is safe, march south into Scorpion Valley. The Broken Watchtower waits in the east canyon — not on this road.',
     ],
   },
   blacksmith: {
