@@ -93,6 +93,12 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-silent-oasis')) {
     return 'Follow the north road to Silent Oasis and protect the well';
   }
+  if (!done.includes('mission-bandit-road')) {
+    return 'Optional: clear Bandit Road east of the oasis for gold and leather';
+  }
+  if (!done.includes('mission-caravan-escort')) {
+    return 'Optional: escort the trade caravan before marching south';
+  }
   if (!save.visitedOverworldRegions.includes('scorpion-valley')) {
     return 'March south through Red Dune Pass into Scorpion Valley';
   }

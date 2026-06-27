@@ -86,3 +86,8 @@ export function getBuildUnlockHint(id: BuildChoice): string | undefined {
       return undefined;
   }
 }
+
+export function getBuildUnlockAnnouncement(id: BuildChoice): string {
+  const def = BUILD_OPTIONS.find((b) => b.id === id);
+  return def ? `${def.name} unlocked for battle!` : `${id} unlocked!`;
+}

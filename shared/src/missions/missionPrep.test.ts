@@ -33,6 +33,12 @@ describe('missionPrep', () => {
     expect(cfg?.maxTowerBuilds).toBe(4);
   });
 
+  it('returns prep for Red Dune Pass and Caravan Escort', () => {
+    expect(isPrepMission('mission-red-dune-pass')).toBe(true);
+    expect(isPrepMission('mission-caravan-escort')).toBe(true);
+    expect(getMissionPrepConfig('mission-red-dune-pass')?.startingWood).toBe(12);
+  });
+
   it('enforces tower and trap slot limits', () => {
     const cfg = getMissionPrepConfig('mission-night-attack')!;
     expect(canPlaceBuildType('arrow_tower', 2, 0, cfg)).toBe(false);

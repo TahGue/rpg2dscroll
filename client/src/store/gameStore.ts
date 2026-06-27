@@ -39,6 +39,8 @@ import {
   getHero,
   getDefenseSkillCost,
   DEFENSE_SKILLS,
+  getBuildUnlocksGrantedByMission,
+  getBuildUnlockAnnouncement,
   getBlueprintUnlockMessage,
   type GameSettings,
   type LocalSaveData,
@@ -126,6 +128,7 @@ interface MissionRuntimeState {
   maxTrapBuilds: number;
   heroAbilityCooldown: number;
   usePrepBuildRules: boolean;
+  overworldPatrolId: string | null;
 }
 
 interface GameStore {
@@ -160,6 +163,7 @@ interface GameStore {
     ngPlusBonusGold: number;
     ngPlusBonusXp: number;
     unlockedLocationIds: string[];
+    buildUnlocksGranted: BuildChoice[];
   } | null;
   /** Focus this map node when opening the world map (e.g. after victory). */
   mapFocusLocationId: string | null;
@@ -181,7 +185,10 @@ interface GameStore {
     brief: string;
     returnX: number;
     returnY: number;
+    patrolId?: string;
   } | null;
+  /** Patrol ambush that launched the current overworld mission. */
+  pendingOverworldPatrolId: string | null;
   overworldCampOpen: boolean;
   overworldMapOpen: boolean;
   overworldUnlockToast: string | null;
@@ -203,7 +210,7 @@ interface GameStore {
   dismissWorldEvent: () => void;
   startMission: (missionId: string, returnScreen?: GameScreen, loadout?: MissionLoadout) => void;
   abortMission: () => void;
-  endMission: (result: Omit<NonNullable<GameStore['lastMissionResult']>, 'missionId' | 'levelsGained' | 'score' | 'isNewBest' | 'elapsedMs' | 'speedBonusGold' | 'newAchievements' | 'missionType' | 'isAmbush' | 'isShrine' | 'isCaravan' | 'isSurvive' | 'isOasis' | 'waterEarned' | 'campaignJustCompleted' | 'inventoryEarned' | 'ngPlusBonusGold' | 'ngPlusBonusXp' | 'unlockedLocationIds'>) => void;
+  endMission: (result: Omit<NonNullable<GameStore['lastMissionResult']>, 'missionId' | 'levelsGained' | 'score' | 'isNewBest' | 'elapsedMs' | 'speedBonusGold' | 'newAchievements' | 'missionType' | 'isAmbush' | 'isShrine' | 'isCaravan' | 'isSurvive' | 'isOasis' | 'waterEarned' | 'campaignJustCompleted' | 'inventoryEarned' | 'ngPlusBonusGold' | 'ngPlusBonusXp' | 'unlockedLocationIds' | 'buildUnlocksGranted'>) => void;
   updateMissionRuntime: (partial: Partial<MissionRuntimeState>) => void;
   addGold: (amount: number) => void;
   spendGold: (amount: number) => boolean;
@@ -305,6 +312,7 @@ const defaultMissionState = (): MissionRuntimeState => ({
   maxTrapBuilds: 99,
   heroAbilityCooldown: 1,
   usePrepBuildRules: false,
+  overworldPatrolId: null,
 });
 
 function applyMetaAchievements(save: LocalSaveData): LocalSaveData {
@@ -347,6 +355,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   overworldInteract: { prompt: null, poiId: null, poi: null },
   overworldDialog: null,
   overworldMissionOffer: null,
+  pendingOverworldPatrolId: null,
   overworldCampOpen: false,
   overworldMapOpen: false,
   overworldUnlockToast: null,
@@ -433,8 +442,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   acceptOverworldMission: () => {
     const { overworldMissionOffer } = get();
     if (!overworldMissionOffer) return;
-    const { missionId } = overworldMissionOffer;
-    set({ overworldMissionOffer: null });
+    const { missionId, patrolId } = overworldMissionOffer;
+    set({ overworldMissionOffer: null, pendingOverworldPatrolId: patrolId ?? null });
     const unseenAct = getUnseenActForMission(missionId, get().save.seenActs);
     if (unseenAct) {
       set({ pendingActBanner: unseenAct, pendingMissionId: missionId, missionReturnScreen: 'world_explore' });
@@ -445,10 +454,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   refreshOverworldAfterMission: () => {
     const { lastMissionResult } = get();
-    if (lastMissionResult?.victory && lastMissionResult.unlockedLocationIds.length > 0) {
-      set({ overworldUnlockToast: 'New paths revealed in the desert' });
-      window.setTimeout(() => set({ overworldUnlockToast: null }), 5000);
+    if (!lastMissionResult?.victory) return;
+
+    const parts: string[] = [];
+    if (lastMissionResult.unlockedLocationIds.length > 0) {
+      parts.push('New paths revealed in the desert');
     }
+    for (const buildId of lastMissionResult.buildUnlocksGranted) {
+      parts.push(getBuildUnlockAnnouncement(buildId));
+    }
+    if (lastMissionResult.campaignJustCompleted) {
+      parts.push('Campaign complete — Guardian of the Dunes!');
+    }
+    if (parts.length === 0) return;
+
+    set({ overworldUnlockToast: parts.join(' · ') });
+    window.setTimeout(() => set({ overworldUnlockToast: null }), 5500);
   },
 
   setOverworldMapOpen: (open) => set({ overworldMapOpen: open }),
@@ -567,6 +588,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       heroId: save.selectedHeroId,
       gateGuard: save.prepUseGateGuard,
     };
+    const overworldPatrolId = get().pendingOverworldPatrolId;
+    if (overworldPatrolId) {
+      set({ pendingOverworldPatrolId: null });
+    }
     const heroId =
       resolvedLoadout.heroId && save.recruitedHeroes.includes(resolvedLoadout.heroId)
         ? resolvedLoadout.heroId
@@ -613,6 +638,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         heroId,
         gateGuardActive: usePrep ? resolvedLoadout.gateGuard : false,
         usePrepBuildRules: usePrep,
+        overworldPatrolId,
       },
       lastMissionResult: null,
     });
@@ -694,7 +720,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         updatedSave.inventory = inventory;
       }
+
+      if (mission.overworldPatrolId && !updatedSave.defeatedOverworldPatrols.includes(mission.overworldPatrolId)) {
+        updatedSave.defeatedOverworldPatrols = [
+          ...updatedSave.defeatedOverworldPatrols,
+          mission.overworldPatrolId,
+        ];
+      }
     }
+
+    const wasFirstClear =
+      result.victory && missionId ? !save.completedMissions.includes(missionId) : false;
+    const buildUnlocksGranted =
+      wasFirstClear && missionId ? getBuildUnlocksGrantedByMission(missionId) : [];
 
     const newAchievements = checkNewAchievements(updatedSave, {
       victory: result.victory,
@@ -753,6 +791,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ngPlusBonusGold,
         ngPlusBonusXp,
         unlockedLocationIds,
+        buildUnlocksGranted,
       },
       screen: 'mission_result',
       mission: defaultMissionState(),

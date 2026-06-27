@@ -118,13 +118,14 @@ export class OverworldBridge {
   static offerPatrolAmbush(patrol: OverworldPatrol, returnX: number, returnY: number): void {
     if (useGameStore.getState().overworldMissionOffer) return;
     const mission = getMissionById(patrol.missionId);
-    this.offerMission(
-      patrol.missionId,
-      patrol.label,
-      patrol.ambushBrief ?? mission?.storyBrief ?? mission?.objective ?? 'Ambush!',
+    useGameStore.getState().setOverworldMissionOffer({
+      missionId: patrol.missionId,
+      title: patrol.label,
+      brief: patrol.ambushBrief ?? mission?.storyBrief ?? mission?.objective ?? 'Ambush!',
       returnX,
       returnY,
-    );
+      patrolId: patrol.id,
+    });
   }
 
   static openCampHub(): void {

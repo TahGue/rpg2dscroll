@@ -102,6 +102,8 @@ export const MISSION_HERO_PREFERENCE: Partial<Record<PrepMissionId, string>> = {
   'mission-shrine-sanctum': 'salim',
   'mission-black-eclipse': 'aisha',
   'mission-shadow-emir': 'salim',
+  'mission-red-dune-pass': 'aisha',
+  'mission-caravan-escort': 'yusuf',
 };
 
 export function getHero(id: string): HeroDefinition | undefined {

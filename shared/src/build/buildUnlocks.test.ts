@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cycleBuildChoice,
   getBuildUnlocksGrantedByMission,
+  getBuildUnlockAnnouncement,
   getUnlockedBuildIds,
   isBuildUnlocked,
 } from './buildUnlocks';
@@ -57,5 +58,9 @@ describe('buildUnlocks', () => {
   it('maps build unlocks to missions', () => {
     expect(getBuildUnlocksGrantedByMission('mission-red-dune-pass')).toEqual(['barricade']);
     expect(getBuildUnlocksGrantedByMission('mission-silent-oasis')).toEqual(['repair_station']);
+  });
+
+  it('announces build unlock labels', () => {
+    expect(getBuildUnlockAnnouncement('barricade')).toContain('Barricade');
   });
 });

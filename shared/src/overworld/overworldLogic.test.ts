@@ -70,6 +70,19 @@ describe('overworld logic', () => {
     expect(isOverworldPatrolActive(patrol, cleared)).toBe(false);
   });
 
+  it('deactivates patrol when marked defeated', () => {
+    const patrol = NAHRAN_OUTSKIRTS.patrols!.find((p) => p.id === 'patrol-bandit-road')!;
+    const active = {
+      ...DEFAULT_SAVE,
+      completedMissions: ['mission-night-attack'],
+      defeatedOverworldPatrols: [] as string[],
+    };
+    expect(isOverworldPatrolActive(patrol, active)).toBe(true);
+
+    const defeated = { ...active, defeatedOverworldPatrols: ['patrol-bandit-road'] };
+    expect(isOverworldPatrolActive(patrol, defeated)).toBe(false);
+  });
+
   it('returns quest hints based on progression', () => {
     const fresh = { ...DEFAULT_SAVE, completedMissions: [] as string[] };
     expect(getOverworldQuestHint(fresh)).toContain('Blacksmith');
@@ -81,6 +94,23 @@ describe('overworld logic', () => {
     };
     expect(getOverworldQuestHint(ready)).toContain('Nahran Gate');
     expect(getOverworldQuestHint({ ...ready, completedMissions: ['mission-night-attack'] })).toContain('Yusuf');
+  });
+
+  it('suggests optional bandit road after silent oasis path begins', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      completedMissions: ['mission-night-attack', 'mission-silent-oasis'] as string[],
+      recruitedHeroes: ['aisha', 'yusuf'],
+      unlockedBlueprints: ['arrow_tower', 'spike_trap'],
+      visitedOverworldRegions: ['nahran-outskirts'],
+    };
+    expect(getOverworldQuestHint(save)).toContain('Bandit Road');
+  });
+
+  it('reveals leather cache after bandit road', () => {
+    const save = { ...DEFAULT_SAVE, completedMissions: ['mission-bandit-road'] };
+    const cache = NAHRAN_OUTSKIRTS.pois.find((p) => p.id === 'poi-leather-cache')!;
+    expect(isOverworldPOIVisible(cache, save)).toBe(true);
   });
 
   it('lists fast travel after oasis is visited', () => {
@@ -108,7 +138,7 @@ describe('overworld logic', () => {
   it('hints valley progression after silent oasis', () => {
     const save = {
       ...DEFAULT_SAVE,
-      completedMissions: ['mission-night-attack', 'mission-silent-oasis'] as string[],
+      completedMissions: ['mission-night-attack', 'mission-silent-oasis', 'mission-bandit-road', 'mission-caravan-escort'] as string[],
       recruitedHeroes: ['aisha', 'yusuf'],
       unlockedBlueprints: ['arrow_tower', 'spike_trap'],
       visitedOverworldRegions: ['nahran-outskirts'],
@@ -175,6 +205,8 @@ describe('overworld logic', () => {
       completedMissions: [
         'mission-night-attack',
         'mission-silent-oasis',
+        'mission-bandit-road',
+        'mission-caravan-escort',
         'mission-scorpion-nest',
         'mission-broken-watchtower',
         'mission-shrine-sanctum',
