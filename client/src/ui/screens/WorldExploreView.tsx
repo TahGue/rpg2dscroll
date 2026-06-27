@@ -137,8 +137,22 @@ export function WorldExploreView() {
         <div ref={containerRef} className="absolute inset-0 [&_canvas]:outline-none" />
 
         <OverworldQuestTracker />
-        <OverworldMinimap />
-        <OverworldTouchControls />
+        <OverworldMinimap
+          onOpenFullMap={() => {
+            SoundManager.play('click');
+            setOverworldMapOpen(true);
+          }}
+        />
+        <OverworldTouchControls
+          onOpenMap={() => {
+            SoundManager.play('click');
+            setOverworldMapOpen(true);
+          }}
+          onOpenCamp={() => {
+            SoundManager.play('click');
+            setOverworldCampOpen(true);
+          }}
+        />
 
         {interactPrompt && !overlayOpen && (
           <div className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 rounded-lg border border-desert-gold/50 bg-black/75 px-5 py-2 text-sm text-desert-gold shadow-lg">

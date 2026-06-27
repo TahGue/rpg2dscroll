@@ -21,9 +21,23 @@ function bindHeld(dir: MoveDir) {
   };
 }
 
-export function OverworldTouchControls() {
+interface OverworldTouchControlsProps {
+  onOpenMap?: () => void;
+  onOpenCamp?: () => void;
+}
+
+export function OverworldTouchControls({ onOpenMap, onOpenCamp }: OverworldTouchControlsProps) {
   return (
     <div className="pointer-events-none absolute inset-0 z-10 md:hidden">
+      <div className="pointer-events-auto absolute left-3 top-20 flex gap-2">
+        {onOpenCamp && (
+          <QuickBtn label="Camp" onClick={onOpenCamp} />
+        )}
+        {onOpenMap && (
+          <QuickBtn label="Map" onClick={onOpenMap} />
+        )}
+      </div>
+
       <div className="pointer-events-auto absolute bottom-20 left-4 flex flex-col items-center gap-1.5">
         <TouchBtn label="↑" {...bindHeld('up')} />
         <div className="flex gap-2">
@@ -43,6 +57,18 @@ export function OverworldTouchControls() {
         E
       </button>
     </div>
+  );
+}
+
+function QuickBtn({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-lg border border-desert-gold/40 bg-black/65 px-3 py-2 text-xs font-semibold text-desert-gold active:bg-desert-gold/15"
+    >
+      {label}
+    </button>
   );
 }
 

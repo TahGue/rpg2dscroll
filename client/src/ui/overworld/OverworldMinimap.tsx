@@ -1,5 +1,6 @@
 import {
   getActiveOverworldPOIs,
+  getOverworldMapRoads,
   getOverworldRegion,
   isOverworldCellExplored,
   type LocalSaveData,
@@ -9,7 +10,11 @@ import { useGameStore } from '@/store/gameStore';
 const MINIMAP_W = 168;
 const MINIMAP_H = 130;
 
-export function OverworldMinimap() {
+interface OverworldMinimapProps {
+  onOpenFullMap?: () => void;
+}
+
+export function OverworldMinimap({ onOpenFullMap }: OverworldMinimapProps) {
   const save = useGameStore((s) => s.save);
   const livePos = useGameStore((s) => s.overworldLivePosition);
   const regionId = save.overworldPosition.regionId || 'nahran-outskirts';
@@ -22,12 +27,29 @@ export function OverworldMinimap() {
 
   const scaleX = MINIMAP_W / region.width;
   const scaleY = MINIMAP_H / region.height;
+  const roads = getOverworldMapRoads(regionId);
+  const shortName =
+    region.id === 'scorpion-valley'
+      ? 'Valley'
+      : region.id === 'black-eclipse-rim'
+        ? 'Eclipse'
+        : 'Nahran';
 
   return (
-    <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-lg border border-desert-gold/30 bg-black/70 p-2 shadow-lg backdrop-blur-sm">
-      <p className="mb-1 text-[9px] uppercase tracking-wider text-desert-gold/80">Map</p>
+    <button
+      type="button"
+      onClick={onOpenFullMap}
+      className={`absolute right-3 top-3 z-10 rounded-lg border border-desert-gold/30 bg-black/70 p-2 text-left shadow-lg backdrop-blur-sm ${
+        onOpenFullMap ? 'pointer-events-auto md:pointer-events-none active:border-desert-gold/60' : 'pointer-events-none'
+      }`}
+      aria-label="Open world map"
+    >
+      <p className="mb-1 text-[9px] uppercase tracking-wider text-desert-gold/80">
+        {shortName}
+        {onOpenFullMap && <span className="ml-1 text-white/40 md:hidden">· tap</span>}
+      </p>
       <svg width={MINIMAP_W} height={MINIMAP_H} className="rounded bg-[#2a2018]">
-        <MinimapRoads scaleX={scaleX} scaleY={scaleY} />
+        <MinimapRoads roads={roads} scaleX={scaleX} scaleY={scaleY} />
         <ExploredCells save={save} regionId={regionId} region={region} scaleX={scaleX} scaleY={scaleY} />
         {pois.map((poi) => (
           <circle
@@ -48,7 +70,7 @@ export function OverworldMinimap() {
           strokeWidth={1.5}
         />
       </svg>
-    </div>
+    </button>
   );
 }
 
@@ -57,17 +79,19 @@ function poiColor(kind: string): string {
   if (kind === 'npc') return '#88ccff';
   if (kind === 'locked_gate') return '#ffaa44';
   if (kind === 'chest' || kind === 'cart') return '#aa88ff';
+  if (kind === 'resource') return '#66bb88';
   return '#d4a843';
 }
 
-function MinimapRoads({ scaleX, scaleY }: { scaleX: number; scaleY: number }) {
-  const roads = [
-    { x: 440, y: 1180, w: 720, h: 48 },
-    { x: 700, y: 520, w: 48, h: 720 },
-    { x: 900, y: 480, w: 400, h: 48 },
-    { x: 1500, y: 880, w: 48, h: 200 },
-    { x: 1040, y: 180, w: 48, h: 360 },
-  ];
+function MinimapRoads({
+  roads,
+  scaleX,
+  scaleY,
+}: {
+  roads: { x: number; y: number; w: number; h: number }[];
+  scaleX: number;
+  scaleY: number;
+}) {
   return (
     <>
       {roads.map((r) => (

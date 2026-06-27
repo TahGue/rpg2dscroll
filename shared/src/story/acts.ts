@@ -66,9 +66,13 @@ export const MISSION_ACT: Record<string, string> = {
 /** Completing this mission queues the next act banner on the world map */
 export const ACT_BANNER_AFTER_MISSION: Record<string, string> = {
   'mission-night-attack': 'act-2',
+  'mission-silent-oasis': 'act-2',
   'mission-red-dune-pass': 'act-3',
+  'mission-scorpion-nest': 'act-3',
   'mission-broken-watchtower': 'act-4',
+  'mission-shrine-sanctum': 'act-4',
   'mission-black-eclipse': 'act-5',
+  'mission-shadow-emir': 'act-5',
 };
 
 export function getActById(id: string): StoryAct | undefined {

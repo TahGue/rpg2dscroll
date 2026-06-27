@@ -110,7 +110,7 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
       x: 220,
       y: 620,
       radius: 70,
-      label: 'Hidden Cave',
+      label: 'Wood Grove',
       resourceLocationId: 'wood-grove',
       revealAfterMission: 'mission-night-attack',
     },
