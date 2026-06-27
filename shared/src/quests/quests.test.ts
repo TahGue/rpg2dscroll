@@ -62,6 +62,7 @@ describe('Drying Well adventure inventory and crafting', () => {
       'desert_mint',
       'water_flask',
       'small_oasis_fish',
+      'rare_oasis_fish',
       'hide',
       'iron_ore',
       'feather',
@@ -76,11 +77,18 @@ describe('Drying Well adventure inventory and crafting', () => {
   it('defines plan-required recipes with inventory stack costs', () => {
     const recipes = new Map(CRAFT_RECIPES.map((recipe) => [recipe.id, recipe]));
 
+    expect(CRAFT_RECIPES.length).toBeGreaterThanOrEqual(12);
     expect(recipes.get('craft-healing-potion')?.inventoryCosts).toEqual({ healing_herb: 2, water_flask: 1 });
+    expect(recipes.get('craft-big-healing-potion')?.outputItemId).toBe('big_healing_potion');
+    expect(recipes.get('craft-herb-tea')?.outputItemId).toBe('herb_tea');
     expect(recipes.get('craft-arrows')?.outputQuantity).toBe(10);
     expect(recipes.get('craft-simple-spear')?.outputItemId).toBe('simple_spear');
+    expect(recipes.get('craft-hunter-bow')?.outputItemId).toBe('bow');
     expect(recipes.get('craft-grilled-fish')?.inventoryCosts).toEqual({ small_oasis_fish: 1 });
+    expect(recipes.get('craft-cooked-meat')?.outputItemId).toBe('cooked_meat');
+    expect(recipes.get('craft-travel-rations')?.outputItemId).toBe('travel_rations');
     expect(recipes.get('craft-leather-gloves')?.inventoryCosts).toEqual({ hide: 2, thread: 1 });
+    expect(recipes.get('craft-bait')?.outputQuantity).toBe(3);
     expect(recipes.get('craft-torch')?.outputItemId).toBe('torch');
   });
 });

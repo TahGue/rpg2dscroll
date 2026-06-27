@@ -79,7 +79,7 @@ export class WorldExploreScene extends Phaser.Scene {
     this.rebuildFog();
 
     OverworldBridge.exploreCells(this.regionId, pos.x, pos.y);
-    OverworldBridge.revealPOIAreas(this.regionId, getActiveOverworldPOIs(region, save));
+    OverworldBridge.revealPOIAreas(this.regionId, this.getInitialRevealPOIs(region, save));
 
     this.cameras.main.setBounds(0, 0, region.width, region.height);
     this.cameras.main.startFollow(this.player, true, 0.18, 0.18);
@@ -172,7 +172,7 @@ export class WorldExploreScene extends Phaser.Scene {
     this.rebuildFog();
     const region = getOverworldRegion(this.regionId);
     const save = useGameStore.getState().save;
-    OverworldBridge.revealPOIAreas(this.regionId, getActiveOverworldPOIs(region, save));
+    OverworldBridge.revealPOIAreas(this.regionId, this.getInitialRevealPOIs(region, save));
 
     if (this.walls) {
       this.walls.clear(true, true);
@@ -204,6 +204,19 @@ export class WorldExploreScene extends Phaser.Scene {
   private isPOIMarkerVisible(poi: OverworldPOI, save: ReturnType<typeof useGameStore.getState>['save']): boolean {
     if (save.visitedOverworldPOIs.includes(poi.id)) return true;
     return isOverworldCellExplored(this.regionId, poi.x, poi.y, save.exploredOverworldCells);
+  }
+
+  private getInitialRevealPOIs(
+    region: OverworldRegion,
+    save: ReturnType<typeof useGameStore.getState>['save'],
+  ): OverworldPOI[] {
+    const active = getActiveOverworldPOIs(region, save);
+    if (region.id !== 'drying-well') return active;
+    return active.filter((poi) => (
+      poi.kind === 'camp_hub' ||
+      poi.id === 'poi-nahran-village' ||
+      (poi.kind === 'npc' && poi.y >= 620 && poi.y <= 1320 && Math.abs(poi.x - 1100) <= 360)
+    ));
   }
 
   private rebuildFog(): void {
@@ -510,15 +523,20 @@ export class WorldExploreScene extends Phaser.Scene {
       .filter((poi) => (poi.kind === 'combat' || poi.kind === 'boss') && !save.completedOverworldEvents.includes(poi.id));
 
     for (const [id, enemy] of this.enemies) {
-      if (!combatPois.some((poi) => poi.id === id)) {
+      const poiId = id.split(':')[0];
+      if (!combatPois.some((poi) => poi.id === poiId)) {
         enemy.destroy();
         this.enemies.delete(id);
       }
     }
 
     for (const poi of combatPois) {
-      if (this.enemies.has(poi.id)) continue;
-      this.enemies.set(poi.id, new OverworldEnemy(this, poi));
+      const count = Math.max(1, poi.enemyCount ?? 1);
+      for (let i = 0; i < count; i += 1) {
+        const key = `${poi.id}:${i}`;
+        if (this.enemies.has(key)) continue;
+        this.enemies.set(key, new OverworldEnemy(this, poi, i, count));
+      }
     }
   }
 
@@ -580,7 +598,7 @@ export class WorldExploreScene extends Phaser.Scene {
       duration: 160,
       onComplete: () => {
         arrow.destroy();
-        if (!this.enemies.has(enemy.poi.id)) return;
+        if (![...this.enemies.values()].includes(enemy)) return;
         if (enemy.takeHit(save.playerStats.attack + 8, new Phaser.Math.Vector2(this.player.x, this.player.y))) {
           this.defeatEnemy(enemy);
         }
@@ -603,10 +621,15 @@ export class WorldExploreScene extends Phaser.Scene {
 
   private defeatEnemy(enemy: OverworldEnemy): void {
     const poi = enemy.poi;
+    const key = [...this.enemies.entries()].find(([, value]) => value === enemy)?.[0];
     enemy.destroy();
-    this.enemies.delete(poi.id);
-    this.add.circle(poi.x, poi.y, poi.kind === 'boss' ? 52 : 36, 0xffd166, 0.22).setDepth(24);
-    this.handleAdventureRewardPOI(poi, `${poi.label} defeated`, true);
+    if (key) this.enemies.delete(key);
+    this.add.circle(enemy.x, enemy.y, poi.kind === 'boss' ? 52 : 36, 0xffd166, 0.22).setDepth(24);
+    if ([...this.enemies.values()].some((remaining) => remaining.poi.id === poi.id)) {
+      this.showFloatText('Enemy defeated');
+      return;
+    }
+    this.handleAdventureRewardPOI(poi, `${poi.label} cleared`, true);
   }
 
   private showFloatText(text: string): void {
@@ -724,6 +747,32 @@ export class WorldExploreScene extends Phaser.Scene {
       g.fillRoundedRect(1680, 860, 220, 40, 8);
       return;
     }
+    if (region.id === 'drying-well') {
+      const roadColor = 0xd2b169;
+      const sidePath = 0xb99758;
+      g.fillStyle(roadColor, 0.88);
+      // Camp -> village -> palm grove main path.
+      g.fillRoundedRect(1068, 840, 64, 420, 10);
+      g.fillRoundedRect(940, 820, 330, 64, 10);
+      g.fillRoundedRect(1068, 500, 64, 340, 10);
+      // Village -> oasis and rocky edge/cave side paths.
+      g.fillRoundedRect(610, 560, 500, 48, 8);
+      g.fillRoundedRect(1100, 500, 480, 48, 8);
+      g.fillRoundedRect(1540, 500, 48, 160, 8);
+      // South danger road.
+      g.fillRoundedRect(1078, 1240, 44, 280, 8);
+      g.fillRoundedRect(1080, 1440, 260, 44, 8);
+      g.fillRoundedRect(1320, 1460, 44, 240, 8);
+      g.fillRoundedRect(1360, 1680, 260, 42, 8);
+      g.fillRoundedRect(1600, 1700, 44, 430, 8);
+      // Optional side loot and hidden routes.
+      g.fillStyle(sidePath, 0.72);
+      g.fillRoundedRect(650, 1580, 500, 30, 6);
+      g.fillRoundedRect(910, 260, 34, 270, 6);
+      g.fillRoundedRect(430, 570, 210, 30, 6);
+      g.fillRoundedRect(1640, 600, 130, 30, 6);
+      return;
+    }
     const roadColor = 0xd4b86a;
     g.fillStyle(roadColor, 0.85);
     g.fillRoundedRect(440, 1180, 720, 48, 8);
@@ -749,6 +798,43 @@ export class WorldExploreScene extends Phaser.Scene {
       this.add.text(1820, 920, 'SHRINE', { fontSize: '9px', color: '#bbaadd' }).setOrigin(0.5).setDepth(5);
       this.add.circle(1760, 880, 20, 0x6688cc, 0.45).setDepth(4);
       this.add.text(1760, 850, 'KEEPER', { fontSize: '8px', color: '#99bbee' }).setOrigin(0.5).setDepth(5);
+    } else if (region.id === 'drying-well') {
+      // Malik's Camp
+      this.add.image(1100, 1250, 'dune_mid').setOrigin(0.5, 1).setTint(0x8b6914).setScale(0.9).setDepth(3);
+      this.add.circle(1170, 1260, 20, 0xff8844, 0.35).setDepth(4);
+      this.add.text(1100, 1320, 'MALIK CAMP', { fontSize: '9px', color: '#f7d27a' }).setOrigin(0.5).setDepth(5);
+
+      // Village hub
+      this.add.circle(1100, 850, 34, 0x5b9bb2, 0.45).setDepth(4);
+      this.add.rectangle(860, 850, 70, 48, 0x5f3d24, 0.9).setDepth(4);
+      this.add.rectangle(1350, 850, 70, 48, 0x3f6d3d, 0.9).setDepth(4);
+      this.add.rectangle(1220, 960, 110, 54, 0x9a6a32, 0.9).setDepth(4);
+      this.add.text(1100, 790, 'NAHRAN VILLAGE', { fontSize: '10px', color: '#fff0b8' }).setOrigin(0.5).setDepth(5);
+
+      // Palm grove, oasis, and cave.
+      for (const [x, y, scale] of [
+        [1000, 470, 1.1],
+        [1120, 500, 1.25],
+        [1220, 430, 1.0],
+        [760, 430, 0.9],
+      ] as const) {
+        this.add.image(x, y, 'palm_tree').setOrigin(0.5, 1).setScale(scale).setDepth(3);
+      }
+      this.add.circle(620, 580, 92, 0x3b91b8, 0.5).setDepth(3);
+      this.add.circle(500, 470, 26, 0x2d728f, 0.55).setDepth(3);
+      this.add.rectangle(1650, 620, 110, 74, 0x4a3828, 0.88).setDepth(4);
+      this.add.text(1650, 570, 'SMALL CAVE', { fontSize: '9px', color: '#d7c0a0' }).setOrigin(0.5).setDepth(5);
+
+      // Broken road and bandit camp.
+      this.add.rectangle(1110, 1460, 84, 42, 0x6b4b2a, 0.9).setDepth(4);
+      this.add.text(1110, 1418, 'BROKEN CART', { fontSize: '9px', color: '#ffd08a' }).setOrigin(0.5).setDepth(5);
+      this.add.rectangle(1510, 1900, 100, 70, 0x7a3322, 0.9).setDepth(4);
+      this.add.rectangle(1690, 1840, 58, 82, 0x633322, 0.9).setDepth(4);
+      this.add.circle(1620, 2130, 92, 0x331810, 0.35).setDepth(3);
+      this.add.text(1620, 2078, 'BOSS ARENA', { fontSize: '10px', color: '#ffb080' }).setOrigin(0.5).setDepth(5);
+      for (const [x, y] of [[1560, 2090], [1700, 2100], [1535, 2180], [1705, 2190]] as const) {
+        this.add.ellipse(x, y, 44, 28, 0x5d4634, 0.85).setDepth(4);
+      }
     } else {
       this.add.image(480, 1220, 'dune_mid').setOrigin(0.5, 1).setTint(0x8b6914).setScale(1.2);
       this.add.image(1100, 500, 'palm_tree').setOrigin(0.5, 1).setScale(1.4).setDepth(3);

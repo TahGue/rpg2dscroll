@@ -305,15 +305,25 @@ export function getActiveOverworldPatrols(
   return (region.patrols ?? []).filter((p) => isOverworldPatrolActive(p, save));
 }
 
-export function isOverworldPOIVisible(poi: OverworldPOI, save: Pick<LocalSaveData, 'completedMissions'>): boolean {
-  if (!poi.revealAfterMission) return true;
-  return save.completedMissions.includes(poi.revealAfterMission);
+export function isOverworldPOIVisible(
+  poi: OverworldPOI,
+  save: Pick<LocalSaveData, 'completedMissions'> & Partial<Pick<LocalSaveData, 'demoUnlocks'>>,
+): boolean {
+  if (poi.revealAfterMission && !save.completedMissions.includes(poi.revealAfterMission)) return false;
+  if (poi.revealAfterDemoUnlock && !(save.demoUnlocks ?? []).includes(poi.revealAfterDemoUnlock)) return false;
+  return true;
 }
 
-export function isOverworldPOIUnlocked(poi: OverworldPOI, save: Pick<LocalSaveData, 'completedMissions'>): boolean {
+export function isOverworldPOIUnlocked(
+  poi: OverworldPOI,
+  save: Pick<LocalSaveData, 'completedMissions'> & Partial<Pick<LocalSaveData, 'demoUnlocks'>>,
+): boolean {
   if (!isOverworldPOIVisible(poi, save)) return false;
   if (poi.kind === 'locked_gate' && poi.unlockAfterMission) {
     return save.completedMissions.includes(poi.unlockAfterMission);
+  }
+  if (poi.unlockAfterDemoUnlock && !(save.demoUnlocks ?? []).includes(poi.unlockAfterDemoUnlock)) {
+    return false;
   }
   if (poi.missionId && poi.kind === 'mission') {
     return true;
@@ -323,9 +333,15 @@ export function isOverworldPOIUnlocked(poi: OverworldPOI, save: Pick<LocalSaveDa
 
 export function getOverworldPOIInteractHint(
   poi: OverworldPOI,
-  save: Pick<LocalSaveData, 'completedMissions' | 'openedOverworldChests' | 'collectedResources' | 'completedOverworldEvents'>,
+  save: Pick<LocalSaveData, 'completedMissions' | 'openedOverworldChests' | 'collectedResources' | 'completedOverworldEvents'> &
+    Partial<Pick<LocalSaveData, 'demoUnlocks'>>,
 ): string {
   if (!isOverworldPOIVisible(poi, save)) return '';
+  if (poi.unlockAfterDemoUnlock && !(save.demoUnlocks ?? []).includes(poi.unlockAfterDemoUnlock)) {
+    return poi.unlockAfterDemoUnlock === 'oasis_road'
+      ? 'Locked - defeat Rashid and recover the water tools'
+      : 'Locked - complete the required quest';
+  }
   if (poi.kind === 'locked_gate' && poi.unlockAfterMission && !save.completedMissions.includes(poi.unlockAfterMission)) {
     if (poi.unlockAfterMission === 'mission-silent-oasis') return 'Locked — save the Silent Oasis first';
     if (poi.unlockAfterMission === 'mission-scorpion-nest') return 'Locked — clear the Scorpion Nest first';
@@ -414,7 +430,7 @@ export function canFastTravelTo(
 
 export function getActiveOverworldPOIs(
   region: OverworldRegion,
-  save: Pick<LocalSaveData, 'completedMissions'>,
+  save: Pick<LocalSaveData, 'completedMissions'> & Partial<Pick<LocalSaveData, 'demoUnlocks'>>,
 ): OverworldPOI[] {
   return region.pois.filter((p) => isOverworldPOIVisible(p, save));
 }

@@ -1055,13 +1055,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (count <= 0) return false;
 
     const healMap: Record<string, number> = {
-      dates: 10,
-      grilled_fish: 18,
-      healing_potion: 45,
+      dates: 5,
+      grilled_fish: 15,
+      cooked_meat: 15,
+      travel_rations: 20,
+      herb_tea: 15,
+      healing_potion: 35,
+      big_healing_potion: 70,
     };
     const staminaMap: Record<string, number> = {
       dates: 8,
       grilled_fish: 15,
+      cooked_meat: 8,
+      travel_rations: 18,
+      herb_tea: 15,
       stamina_drink: 40,
     };
     const heal = healMap[itemId] ?? 0;

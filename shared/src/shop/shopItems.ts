@@ -25,6 +25,20 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
     vendor: 'herbalist',
   },
   {
+    id: 'big_healing_potion',
+    name: 'Big Healing Potion',
+    description: 'A stronger potion for the Bandit Camp approach.',
+    cost: 70,
+    vendor: 'herbalist',
+  },
+  {
+    id: 'herb_tea',
+    name: 'Herb Tea',
+    description: 'Restores health and stamina between fights.',
+    cost: 24,
+    vendor: 'herbalist',
+  },
+  {
     id: 'arrows',
     name: 'Arrow',
     description: 'Ammunition for Malik\'s bow.',
@@ -43,6 +57,13 @@ export const SHOP_ITEMS: ShopItemDefinition[] = [
     name: 'Fishing Rod',
     description: 'Tool for catching oasis fish.',
     cost: 45,
+    vendor: 'fisherman',
+  },
+  {
+    id: 'bait',
+    name: 'Bait',
+    description: 'Useful for better fishing spots.',
+    cost: 6,
     vendor: 'fisherman',
   },
   {

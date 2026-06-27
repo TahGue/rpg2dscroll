@@ -30,6 +30,10 @@ export interface OverworldPOI {
   unlockAfterMission?: string;
   /** Hide until player completes this mission */
   revealAfterMission?: string;
+  /** Hide until the adventure demo unlock is earned. */
+  revealAfterDemoUnlock?: string;
+  /** Must earn this adventure demo unlock before POI is usable. */
+  unlockAfterDemoUnlock?: string;
   chestGold?: number;
   chestIron?: number;
   /** Show in fast-travel menu after visited. */
@@ -44,6 +48,7 @@ export interface OverworldPOI {
   goldReward?: number;
   enemyType?: 'hyena' | 'scorpion' | 'bandit' | 'bandit_archer' | 'rashid';
   enemyHp?: number;
+  enemyCount?: number;
   requiredItemId?: string;
 }
 
