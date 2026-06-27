@@ -4,6 +4,7 @@ import {
   getActiveOverworldPOIs,
   getActiveOverworldWalls,
   getNewExploredCellsNearPoint,
+  getOverworldCampaignProgress,
   getOverworldQuestHint,
   getFastTravelDestinations,
   isOverworldPatrolActive,
@@ -237,5 +238,47 @@ describe('overworld logic', () => {
     };
     const destinations = getFastTravelDestinations(BLACK_ECLIPSE_RIM, save);
     expect(destinations.some((p) => p.id === 'poi-eclipse-outpost')).toBe(true);
+  });
+});
+
+describe('getOverworldCampaignProgress', () => {
+  it('starts at act I with zero main-path steps', () => {
+    const progress = getOverworldCampaignProgress(DEFAULT_SAVE);
+    expect(progress.completedSteps).toBe(0);
+    expect(progress.totalSteps).toBe(10);
+    expect(progress.chapterTitle).toBe('Act I');
+    expect(progress.percent).toBe(0);
+  });
+
+  it('advances through act II after silent oasis', () => {
+    const progress = getOverworldCampaignProgress({
+      ...DEFAULT_SAVE,
+      recruitedHeroes: ['aisha'],
+      completedMissions: ['mission-night-attack', 'mission-silent-oasis'],
+    });
+    expect(progress.completedSteps).toBe(3);
+    expect(progress.chapterTitle).toBe('Act II');
+    expect(progress.percent).toBe(30);
+  });
+
+  it('marks complete at 100% after shadow emir', () => {
+    const progress = getOverworldCampaignProgress({
+      ...DEFAULT_SAVE,
+      recruitedHeroes: ['aisha', 'yusuf', 'hamza', 'salim'],
+      completedMissions: [
+        'mission-night-attack',
+        'mission-silent-oasis',
+        'mission-scorpion-nest',
+        'mission-broken-watchtower',
+        'mission-shrine-sanctum',
+        'mission-black-eclipse',
+        'mission-shadow-emir',
+      ],
+      visitedOverworldRegions: ['nahran-outskirts', 'scorpion-valley', 'black-eclipse-rim'],
+      campaignComplete: true,
+    });
+    expect(progress.completedSteps).toBe(10);
+    expect(progress.percent).toBe(100);
+    expect(progress.chapterTitle).toBe('Complete');
   });
 });

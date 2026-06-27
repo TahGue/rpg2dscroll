@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ACHIEVEMENTS, getInventoryItem, getLocationDisplayName, getCurrentMapNodeId } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { SoundManager } from '@/game/systems/SoundManager';
+import { ActBannerModal } from '@/ui/components/ActBannerModal';
 
 function formatTime(ms: number): string {
   const sec = Math.floor(ms / 1000);
@@ -15,6 +16,8 @@ export function MissionResultScreen() {
   const queueMissionStart = useGameStore((s) => s.queueMissionStart);
   const missionReturnScreen = useGameStore((s) => s.missionReturnScreen);
   const refreshOverworldAfterMission = useGameStore((s) => s.refreshOverworldAfterMission);
+  const pendingActBanner = useGameStore((s) => s.pendingActBanner);
+  const dismissActBanner = useGameStore((s) => s.dismissActBanner);
   const result = useGameStore((s) => s.lastMissionResult);
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export function MissionResultScreen() {
   }
 
   return (
-    <div className="flex h-full items-center justify-center bg-desert-night/95">
+    <div className="relative flex h-full items-center justify-center bg-desert-night/95">
       <div className="w-full max-w-md rounded-2xl border border-desert-gold/40 bg-black/60 p-8 text-center text-white">
         <h2 className={`font-display mb-4 text-4xl ${result.victory ? 'text-desert-gold' : 'text-red-400'}`}>
           {result.victory ? 'Victory!' : 'Defeat'}
@@ -184,6 +187,10 @@ export function MissionResultScreen() {
           )}
         </div>
       </div>
+
+      {result.victory && pendingActBanner && (
+        <ActBannerModal actId={pendingActBanner} onDismiss={dismissActBanner} />
+      )}
     </div>
   );
 }

@@ -68,6 +68,57 @@ export function isOverworldCellExplored(
   return explored.includes(getOverworldCellKey(regionId, x, y, cellSize));
 }
 
+export interface OverworldCampaignProgress {
+  completedSteps: number;
+  totalSteps: number;
+  percent: number;
+  chapterTitle: string;
+  chapterSubtitle: string;
+}
+
+type OverworldCampaignSave = Pick<
+  LocalSaveData,
+  'completedMissions' | 'recruitedHeroes' | 'visitedOverworldRegions' | 'campaignComplete'
+>;
+
+const CAMPAIGN_STEP_CHECKS: Array<(save: OverworldCampaignSave) => boolean> = [
+  (save) => save.recruitedHeroes.includes('aisha'),
+  (save) => save.completedMissions.includes('mission-night-attack'),
+  (save) => save.completedMissions.includes('mission-silent-oasis'),
+  (save) => save.visitedOverworldRegions.includes('scorpion-valley'),
+  (save) => save.completedMissions.includes('mission-scorpion-nest'),
+  (save) => save.completedMissions.includes('mission-broken-watchtower'),
+  (save) => save.completedMissions.includes('mission-shrine-sanctum'),
+  (save) => save.visitedOverworldRegions.includes('black-eclipse-rim'),
+  (save) => save.completedMissions.includes('mission-black-eclipse'),
+  (save) => save.completedMissions.includes('mission-shadow-emir') || save.campaignComplete,
+];
+
+function getCampaignChapterForStep(stepIndex: number): { title: string; subtitle: string } {
+  if (stepIndex <= 1) return { title: 'Act I', subtitle: 'Nahran Under Siege' };
+  if (stepIndex <= 3) return { title: 'Act II', subtitle: 'Oases and Ambushes' };
+  if (stepIndex <= 6) return { title: 'Act III', subtitle: 'First Sentinels' };
+  if (stepIndex <= 8) return { title: 'Act IV', subtitle: 'Shadow Over the Dunes' };
+  return { title: 'Act V', subtitle: 'Guardian of the Dunes' };
+}
+
+export function getOverworldCampaignProgress(save: OverworldCampaignSave): OverworldCampaignProgress {
+  const totalSteps = CAMPAIGN_STEP_CHECKS.length;
+  const completedSteps = CAMPAIGN_STEP_CHECKS.filter((check) => check(save)).length;
+  const percent = Math.round((completedSteps / totalSteps) * 100);
+  const firstIncomplete = CAMPAIGN_STEP_CHECKS.findIndex((check) => !check(save));
+  const focusStep = firstIncomplete === -1 ? totalSteps - 1 : firstIncomplete;
+  const chapter = getCampaignChapterForStep(focusStep);
+
+  return {
+    completedSteps,
+    totalSteps,
+    percent: save.campaignComplete ? 100 : percent,
+    chapterTitle: save.campaignComplete ? 'Complete' : chapter.title,
+    chapterSubtitle: save.campaignComplete ? 'Guardian of the Dunes' : chapter.subtitle,
+  };
+}
+
 export function getOverworldQuestHint(
   save: Pick<
     LocalSaveData,
