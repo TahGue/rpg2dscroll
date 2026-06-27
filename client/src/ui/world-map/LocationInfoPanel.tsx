@@ -12,6 +12,7 @@ import {
   getLocationDisplayName,
   getBuildUnlocksGrantedByMission,
   getBuildDefinition,
+  findOverworldPOIForMission,
   isPrepMission,
   PRIMARY_ROUTE,
   type MissionDefinition,
@@ -24,6 +25,7 @@ interface LocationInfoPanelProps {
   save: LocalSaveData;
   currentNodeId: string;
   onStartMission: (mission: MissionDefinition) => void;
+  onTravelToMissionInDesert?: (missionId: string) => void;
   onOpenCamp: () => void;
   onOpenShop: () => void;
   onCollectResource: (locationId: string) => void;
@@ -36,6 +38,7 @@ export function LocationInfoPanel({
   save,
   currentNodeId,
   onStartMission,
+  onTravelToMissionInDesert,
   onOpenCamp,
   onOpenShop,
   onCollectResource,
@@ -47,10 +50,10 @@ export function LocationInfoPanel({
       <aside className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-desert-gold/20 bg-black/40 p-6 text-white">
         <h3 className="font-display mb-2 text-xl text-desert-gold">Desert Journey</h3>
         <p className="text-sm leading-relaxed text-white/60">
-          Click a location on the map to read its story, preview rewards, and begin your next mission.
+          This chart tracks campaign progress. Play missions as side-scroll defense levels in the desert — not on this map.
         </p>
         <p className="mt-4 text-xs text-white/40">
-          The golden marker shows where Malik must travel next.
+          Use <span className="text-desert-gold">Explore</span> to walk the desert and reach mission sites.
         </p>
       </aside>
     );
@@ -133,6 +136,7 @@ export function LocationInfoPanel({
           unlocked={unlocked}
           completed={completed}
           onStartMission={onStartMission}
+          onTravelToMissionInDesert={onTravelToMissionInDesert}
           onOpenCamp={onOpenCamp}
           onOpenShop={onOpenShop}
           onCollectResource={onCollectResource}
@@ -276,6 +280,7 @@ function PanelActions({
   unlocked,
   completed,
   onStartMission,
+  onTravelToMissionInDesert,
   onOpenCamp,
   onOpenShop,
   onCollectResource,
@@ -288,6 +293,7 @@ function PanelActions({
   unlocked: boolean;
   completed: boolean;
   onStartMission: (m: MissionDefinition) => void;
+  onTravelToMissionInDesert?: (missionId: string) => void;
   onOpenCamp: () => void;
   onOpenShop: () => void;
   onCollectResource: (id: string) => void;
@@ -346,19 +352,35 @@ function PanelActions({
   }
 
   if (mission) {
+    const desertPOI = findOverworldPOIForMission(mission.id);
+    const prepLabel = isPrepMission(mission.id) ? 'Launch defense (prep)' : 'Launch defense mission';
+    const replayLabel = isPrepMission(mission.id) ? 'Replay defense' : 'Replay mission';
+
     return (
-      <ActionButton
-        onClick={() => {
-          SoundManager.play('click');
-          onStartMission(mission);
-        }}
-      >
-        {completed
-          ? 'Replay Mission'
-          : mission && isPrepMission(mission.id)
-            ? 'Prepare Defense'
-            : 'Start Mission'}
-      </ActionButton>
+      <div className="space-y-2">
+        <p className="text-xs leading-relaxed text-white/45">
+          Side-scroll defense — Malik fights waves and protects the gate. This is separate from desert exploration.
+        </p>
+        {desertPOI && onTravelToMissionInDesert && !completed && (
+          <ActionButton
+            onClick={() => {
+              SoundManager.play('click');
+              onTravelToMissionInDesert(mission.id);
+            }}
+          >
+            Explore desert → reach site
+          </ActionButton>
+        )}
+        <ActionButton
+          variant={desertPOI && !completed ? 'secondary' : undefined}
+          onClick={() => {
+            SoundManager.play('click');
+            onStartMission(mission);
+          }}
+        >
+          {completed ? replayLabel : desertPOI ? 'Quick launch defense' : prepLabel}
+        </ActionButton>
+      </div>
     );
   }
 
@@ -408,7 +430,7 @@ function ActionButton({
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  variant?: 'muted';
+  variant?: 'muted' | 'secondary';
 }) {
   return (
     <button
@@ -418,7 +440,9 @@ function ActionButton({
       className={`w-full rounded-lg py-3 font-semibold transition-colors ${
         disabled || variant === 'muted'
           ? 'cursor-not-allowed border border-white/20 bg-black/30 text-white/40'
-          : 'bg-desert-gold text-desert-night hover:bg-yellow-400'
+          : variant === 'secondary'
+            ? 'border border-desert-gold/40 bg-black/30 text-desert-gold hover:bg-desert-gold/10'
+            : 'bg-desert-gold text-desert-night hover:bg-yellow-400'
       }`}
     >
       {children}

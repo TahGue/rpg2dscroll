@@ -5,6 +5,7 @@ import {
   SHOP_ITEMS,
   getCurrentMapNodeId,
   getLocationDisplayName,
+  findOverworldPOIForMission,
 } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { SoundManager } from '@/game/systems/SoundManager';
@@ -31,6 +32,7 @@ export function WorldMap() {
   const showCampIntroIfNeeded = useGameStore((s) => s.showCampIntroIfNeeded);
   const mapFocusLocationId = useGameStore((s) => s.mapFocusLocationId);
   const mapUnlockAnnouncement = useGameStore((s) => s.mapUnlockAnnouncement);
+  const travelToOverworldRegion = useGameStore((s) => s.travelToOverworldRegion);
   const clearMapFocus = useGameStore((s) => s.clearMapFocus);
 
   const currentNodeId = getCurrentMapNodeId(save);
@@ -104,6 +106,14 @@ export function WorldMap() {
     }
   };
 
+  const handleTravelToMissionInDesert = (missionId: string) => {
+    const poi = findOverworldPOIForMission(missionId);
+    if (!poi) return;
+    SoundManager.play('click');
+    travelToOverworldRegion(poi.regionId, poi.x, poi.y);
+    setScreen('world_explore');
+  };
+
   const handleDiscoverLore = (_locationId: string, loreId: string) => {
     unlockLore(loreId);
     setDiscoveredLoreId(loreId);
@@ -119,7 +129,10 @@ export function WorldMap() {
         >
           ← Main Menu
         </button>
-        <div className="font-display text-base text-desert-gold sm:text-lg">Campaign Overview</div>
+        <div className="text-center sm:flex-1">
+          <div className="font-display text-base text-desert-gold sm:text-lg">Campaign Overview</div>
+          <p className="text-[10px] text-white/40">Progress chart — not the defense game</p>
+        </div>
         <div className="flex flex-wrap gap-3 text-xs text-desert-gold sm:justify-end sm:gap-4 sm:text-sm">
           <span>Lv.{save.level}</span>
           <span>{save.gold}g</span>
@@ -177,6 +190,7 @@ export function WorldMap() {
           save={save}
           currentNodeId={currentNodeId}
           onStartMission={(m) => handleStartMission(m.id)}
+          onTravelToMissionInDesert={handleTravelToMissionInDesert}
           onOpenCamp={() => setCampOpen(true)}
           onOpenShop={() => setShopOpen(true)}
           onCollectResource={handleCollectResource}

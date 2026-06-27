@@ -8,6 +8,7 @@ import {
   getCampaignNextGoal,
   getOverworldQuestHint,
   getFastTravelDestinations,
+  findOverworldPOIForMission,
   isOverworldPatrolActive,
   isOverworldPOIVisible,
   isOverworldPOIUnlocked,
@@ -242,6 +243,18 @@ describe('overworld logic', () => {
     };
     const destinations = getFastTravelDestinations(BLACK_ECLIPSE_RIM, save);
     expect(destinations.some((p) => p.id === 'poi-eclipse-outpost')).toBe(true);
+  });
+});
+
+describe('findOverworldPOIForMission', () => {
+  it('finds desert POI for night attack', () => {
+    const poi = findOverworldPOIForMission('mission-night-attack');
+    expect(poi?.regionId).toBe('nahran-outskirts');
+    expect(poi?.poiId).toBeDefined();
+  });
+
+  it('returns null for unknown missions', () => {
+    expect(findOverworldPOIForMission('mission-unknown')).toBeNull();
   });
 });
 

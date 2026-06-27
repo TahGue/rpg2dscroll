@@ -1,6 +1,6 @@
 import type { LocalSaveData } from '../types/save';
 import type { OverworldPOI, OverworldPatrol, OverworldRegion, OverworldRegionTransition } from './overworldTypes';
-import { getOverworldRegion } from './nahranOutskirts';
+import { getOverworldRegion, OVERWORLD_REGIONS } from './nahranOutskirts';
 import { getCurrentMapNodeId, getLocationDisplayName } from '../world/worldMap';
 
 export const OVERWORLD_CELL_SIZE = 100;
@@ -225,6 +225,22 @@ export function getAllFastTravelDestinations(
     }
   }
   return destinations;
+}
+
+export function findOverworldPOIForMission(missionId: string): {
+  regionId: string;
+  poiId: string;
+  x: number;
+  y: number;
+} | null {
+  for (const region of Object.values(OVERWORLD_REGIONS)) {
+    for (const poi of region.pois) {
+      if (poi.missionId === missionId) {
+        return { regionId: region.id, poiId: poi.id, x: poi.x, y: poi.y };
+      }
+    }
+  }
+  return null;
 }
 
 export function isRegionTransitionUnlocked(

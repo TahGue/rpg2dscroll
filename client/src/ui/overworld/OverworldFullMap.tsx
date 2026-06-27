@@ -46,7 +46,7 @@ export function OverworldFullMap({ onClose }: OverworldFullMapProps) {
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col rounded-2xl border border-desert-gold/40 bg-desert-night/95 p-4 text-white shadow-2xl sm:p-6">
         <div className="mb-3 flex items-start justify-between gap-3 sm:mb-4 sm:gap-4">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-widest text-desert-gold/70">World map · M to close</p>
+            <p className="text-xs uppercase tracking-widest text-desert-gold/70">Desert region · M to close</p>
             <h3 className="font-display truncate text-xl text-desert-gold sm:text-2xl">{region.name}</h3>
             <p className="mt-1 text-xs text-white/60 sm:text-sm">{region.subtitle}</p>
           </div>

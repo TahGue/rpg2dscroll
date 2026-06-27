@@ -42,7 +42,7 @@ export function OverworldMinimap({ onOpenFullMap }: OverworldMinimapProps) {
       className={`absolute right-3 top-3 z-10 rounded-lg border border-desert-gold/30 bg-black/70 p-2 text-left shadow-lg backdrop-blur-sm ${
         onOpenFullMap ? 'pointer-events-auto md:pointer-events-none active:border-desert-gold/60' : 'pointer-events-none'
       }`}
-      aria-label="Open world map"
+      aria-label="Open desert region map"
     >
       <p className="mb-1 text-[9px] uppercase tracking-wider text-desert-gold/80">
         {shortName}

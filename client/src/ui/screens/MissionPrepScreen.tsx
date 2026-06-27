@@ -88,9 +88,12 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto bg-desert-night/95 p-4">
       <div className="w-full max-w-2xl rounded-2xl border border-desert-gold/40 bg-black/70 p-6 text-white shadow-2xl sm:p-8">
-        <p className="text-xs uppercase tracking-widest text-desert-gold/70">Prepare the defense</p>
+        <p className="text-xs uppercase tracking-widest text-desert-gold/70">Side-scroll defense</p>
         <h1 className="font-display mt-1 text-3xl text-desert-gold">{mission.name}</h1>
         <p className="mt-2 text-sm text-white/70">{mission.storyBrief ?? mission.objective}</p>
+        <p className="mt-2 text-xs text-white/45">
+          Malik fights waves in a 2D defense level — separate from desert exploration and the campaign chart.
+        </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <section className="rounded-xl border border-white/10 bg-white/5 p-4">
@@ -148,7 +151,7 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
 
         <section className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
           <h2 className="text-sm font-semibold text-desert-gold">
-            {isWide ? 'Battlefield assignments' : 'NPC defender'}
+            {isWide ? 'Defense lane assignments' : 'NPC defender'}
           </h2>
           {isWide ? (
             <div className="mt-3 space-y-4">
@@ -210,7 +213,7 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
             onClick={handleConfirm}
             className="rounded-xl bg-desert-gold px-6 py-3 font-semibold text-desert-night hover:bg-desert-gold/90"
           >
-            Enter battlefield
+            Enter defense mission
           </button>
           <button
             type="button"

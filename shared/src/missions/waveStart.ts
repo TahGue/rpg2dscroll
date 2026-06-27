@@ -20,5 +20,5 @@ export function getWaveStartHint(ctx: WaveStartLabelContext): string {
   if (ctx.currentWave === 0) {
     return 'Explore left and right from the gate — gather, repair, build — then ring the war bell.';
   }
-  return 'Walk the battlefield — repair and rebuild both flanks, then sound the horn for the next wave.';
+  return 'Walk the defense lane — repair both flanks, then sound the horn for the next wave.';
 }

@@ -56,7 +56,7 @@ export function MainMenu() {
 
         <div className="flex flex-col gap-3">
           <MenuButton onClick={() => navigate('world_explore')}>Begin Adventure</MenuButton>
-          <MenuButton onClick={() => navigate('world_map')} variant="secondary">Region Map</MenuButton>
+          <MenuButton onClick={() => navigate('world_map')} variant="secondary">Campaign Overview</MenuButton>
           <MenuButton onClick={() => navigate('upgrade')} variant="secondary">Upgrades</MenuButton>
           <MenuButton onClick={() => navigate('camp_upgrades')} variant="secondary">Camp Upgrades</MenuButton>
           <MenuButton onClick={() => navigate('relic_upgrades')} variant="secondary">Sentinel Relics</MenuButton>
