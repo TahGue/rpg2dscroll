@@ -271,6 +271,16 @@ export class WorldExploreScene extends Phaser.Scene {
             break;
           }
         }
+        if (poi.npcId === 'water_keeper') {
+          const save = useGameStore.getState().save;
+          if (
+            !save.recruitedHeroes.includes('yusuf') &&
+            save.completedMissions.includes('mission-night-attack')
+          ) {
+            useGameStore.setState({ overworldRecruitOffer: { heroId: 'yusuf' } });
+            break;
+          }
+        }
         const dialog = poi.npcId ? getOverworldNpcDialogue(poi.npcId) : undefined;
         if (dialog) OverworldBridge.openNpcDialog(dialog.id, dialog.lines, dialog.name);
         break;
@@ -290,17 +300,11 @@ export class WorldExploreScene extends Phaser.Scene {
         }
         break;
       case 'chest':
-      case 'cart': {
-        const granted = OverworldBridge.grantChest(poi.id, poi.chestGold ?? 0, poi.chestIron ?? 0);
-        const blueprintNew =
-          poi.kind === 'cart' ? useGameStore.getState().unlockBlueprint('spike_trap') : false;
-        if (granted || blueprintNew) {
+        if (OverworldBridge.grantChest(poi.id, poi.chestGold ?? 0, poi.chestIron ?? 0)) {
           SoundManager.play('gold');
-          if (blueprintNew) this.showFloatText('Spike Trap blueprint recovered!');
-          else if (granted) this.showFloatText(`+${poi.chestGold ?? 0} gold`);
+          this.showFloatText(`+${poi.chestGold ?? 0} gold`);
         }
         break;
-      }
       case 'resource':
         if (poi.resourceLocationId) {
           useGameStore.getState().collectResource(poi.resourceLocationId);
@@ -308,6 +312,12 @@ export class WorldExploreScene extends Phaser.Scene {
         }
         break;
       case 'event':
+        if (poi.eventId === 'broken_caravan') {
+          if (!save.completedOverworldEvents.includes(poi.id)) {
+            useGameStore.getState().openWorldEvent(poi.id, poi.eventId);
+          }
+          break;
+        }
         if (OverworldBridge.completeEvent(poi.id, poi.chestGold ?? 0, poi.eventLoreId)) {
           SoundManager.play('gold');
           this.showFloatText(`+${poi.chestGold ?? 0} gold · lore found`);

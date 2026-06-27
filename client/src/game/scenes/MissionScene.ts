@@ -300,7 +300,10 @@ export class MissionScene extends Phaser.Scene {
       }
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.input.keyboard!.addKey('Q'))) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.input.keyboard!.addKey('Q')) ||
+      InputBridge.consumePulse('hero_ability')
+    ) {
       const enemies = this.enemies.getChildren() as Enemy[];
       this.heroAbilities?.tryUseAbility(
         this.player.x,
@@ -538,6 +541,12 @@ export class MissionScene extends Phaser.Scene {
     );
     this.events.on('wave-started', this.onWaveStarted);
     this.events.on('wave-cleared', this.onWaveCleared);
+    this.events.on('hero-healing-spring', (amount: number) => {
+      this.player.heal(Math.round(amount * 0.45));
+      this.gate?.repair(Math.round(amount * 0.55));
+      this.caravan?.repair(Math.round(amount * 0.55));
+      this.gateGuard?.heal(Math.round(amount * 0.35));
+    });
     this.events.on('barricade-destroyed', () => this.syncEnemyBarricades());
     this.events.on('boss-summon', this.onBossSummon);
     this.events.on('waves-cleared', (data: { goldEarned: number; xpEarned: number }) => {

@@ -45,6 +45,12 @@ export const LORE_ENTRIES: LoreEntry[] = [
     body: 'Three-toed prints in the night sand mean a pack is circling. Hyenas hunt in silence until they strike — the elders say when the tracks point toward camp, the gate must be manned before moonset.',
   },
   {
+    id: 'lore-bandit-tracks',
+    title: 'Bandit Scouts',
+    category: 'enemy',
+    body: 'Light footprints and torn cloth mark where scouts fled the caravan raid. They report to a larger bandit camp on the eastern road — the same raiders who test Nahran\'s gates.',
+  },
+  {
     id: 'lore-scorpion-nest',
     title: 'Scorpion Nest',
     category: 'enemy',

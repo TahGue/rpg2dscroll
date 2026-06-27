@@ -80,6 +80,9 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-night-attack')) {
     return 'Walk to Nahran Gate and defend the camp before sunrise';
   }
+  if (!save.recruitedHeroes.includes('yusuf')) {
+    return 'Silent Oasis is open — recruit Yusuf at the Water Keeper';
+  }
   if (!done.includes('mission-silent-oasis')) {
     return 'Follow the north road to Silent Oasis and protect the well';
   }
@@ -159,8 +162,12 @@ export function getOverworldPOIInteractHint(
       return `Enter ${poi.label}`;
     case 'event':
       return save.completedOverworldEvents.includes(poi.id)
-        ? 'Tracks faded into the sand'
-        : 'Investigate tracks';
+        ? poi.eventId === 'broken_caravan'
+          ? 'Wreck picked clean'
+          : 'Tracks faded into the sand'
+        : poi.eventId === 'broken_caravan'
+          ? 'Investigate wreckage'
+          : 'Investigate tracks';
     default:
       return poi.label;
   }

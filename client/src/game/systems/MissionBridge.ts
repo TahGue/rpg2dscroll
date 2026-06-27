@@ -3,6 +3,9 @@ import {
   getLevelDamageBonus,
   getLevelHpBonus,
   getNgPlusMultiplier,
+  getBuildGoldDiscount,
+  getDefenseRepairMultiplier,
+  getHero,
   type BuildUnlockContext,
 } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
@@ -211,9 +214,12 @@ export class MissionBridge {
   }
 
   static getOasisRegenRate(): number {
+    const save = useGameStore.getState().save;
     const base = 10;
-    const camp = (useGameStore.getState().save.campUpgrades.well_blessing ?? 0) * 3;
-    return base + camp;
+    const camp = (save.campUpgrades.well_blessing ?? 0) * 3;
+    const hero = getHero(useGameStore.getState().mission.heroId ?? '');
+    const heroMult = hero?.supportHealMult ?? 1;
+    return (base + camp) * heroMult;
   }
 
   static getNgPlusMultiplier(): number {
@@ -232,9 +238,17 @@ export class MissionBridge {
   }
 
   static getRepairRate(): number {
-    const level = useGameStore.getState().save.upgrades.repair_speed ?? 1;
+    const save = useGameStore.getState().save;
+    const level = save.upgrades.repair_speed ?? 1;
     const mult = useGameStore.getState().mission.repairMultiplier;
-    return (25 + (level - 1) * 10) * mult;
+    const hero = getHero(useGameStore.getState().mission.heroId ?? '');
+    const heroMult = hero?.supportHealMult ?? 1;
+    return (25 + (level - 1) * 10) * mult * getDefenseRepairMultiplier(save) * heroMult;
+  }
+
+  static getDiscountedBuildGoldCost(baseCost: number): number {
+    const discount = getBuildGoldDiscount(useGameStore.getState().save);
+    return Math.max(1, Math.round(baseCost * (1 - discount)));
   }
 
   static getTowerDamage(): number {

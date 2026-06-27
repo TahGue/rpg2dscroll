@@ -27,6 +27,13 @@ export class HeroAbilitySystem {
       return true;
     }
 
+    if (heroId === 'yusuf' && hero.activeHeal) {
+      this.healingSpring(playerX, playerY, hero.activeHeal);
+      this.lastUsed = now;
+      MissionBridge.syncHeroAbilityCooldown(0);
+      return true;
+    }
+
     return false;
   }
 
@@ -75,6 +82,33 @@ export class HeroAbilitySystem {
       .text(playerX + dir * 80, lineY - 70, 'ARROW RAIN', {
         fontSize: '16px',
         color: '#ffdd88',
+        fontFamily: 'Georgia, serif',
+        stroke: '#1a1428',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(200);
+    this.scene.time.delayedCall(900, () => banner.destroy());
+  }
+
+  private healingSpring(playerX: number, playerY: number, amount: number): void {
+    SoundManager.play('click');
+    const ring = this.scene.add
+      .circle(playerX, playerY - 28, 24, 0x66ddff, 0.45)
+      .setDepth(14);
+    this.scene.tweens.add({
+      targets: ring,
+      scale: 5,
+      alpha: 0,
+      duration: 700,
+      onComplete: () => ring.destroy(),
+    });
+    this.scene.events.emit('hero-healing-spring', amount);
+
+    const banner = this.scene.add
+      .text(playerX, playerY - 90, 'HEALING SPRING', {
+        fontSize: '16px',
+        color: '#88ddff',
         fontFamily: 'Georgia, serif',
         stroke: '#1a1428',
         strokeThickness: 3,

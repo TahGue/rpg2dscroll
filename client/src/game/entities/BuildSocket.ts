@@ -76,12 +76,13 @@ export class BuildSocket extends Phaser.GameObjects.Container {
       return;
     }
 
-    const parts = [`${build.goldCost}g`];
+    const goldCost = MissionBridge.getDiscountedBuildGoldCost(build.goldCost);
+    const parts = [`${goldCost}g`];
     if (build.woodCost > 0) parts.push(`${build.woodCost} wood`);
     if (build.ironCost > 0) parts.push(`${build.ironCost} iron`);
     this.hintText.setText(`[B] ${build.name} (${parts.join(' + ')})`);
 
-    const canAfford = this.canAffordBuild(build.goldCost, build.woodCost, build.ironCost);
+    const canAfford = this.canAffordBuild(goldCost, build.woodCost, build.ironCost);
     this.hintText.setColor(canAfford ? '#d4a843' : '#ff6666');
   }
 
@@ -93,7 +94,8 @@ export class BuildSocket extends Phaser.GameObjects.Container {
     if (!isBuildUnlocked(build.id as Parameters<typeof isBuildUnlocked>[0], ctx)) return null;
     if (!MissionBridge.canPlaceBuildType(build.id)) return null;
 
-    if (!MissionBridge.spendMissionGold(build.goldCost)) return null;
+    const goldCost = MissionBridge.getDiscountedBuildGoldCost(build.goldCost);
+    if (!MissionBridge.spendMissionGold(goldCost)) return null;
 
     const useMissionSupplies = MissionBridge.usePrepBuildRules();
     if (build.ironCost > 0) {
@@ -101,7 +103,7 @@ export class BuildSocket extends Phaser.GameObjects.Container {
         ? MissionBridge.spendMissionIron(build.ironCost)
         : this.spendSaveIron(build.ironCost);
       if (!ok) {
-        MissionBridge.addGold(build.goldCost);
+        MissionBridge.addGold(goldCost);
         return null;
       }
     }
@@ -111,7 +113,7 @@ export class BuildSocket extends Phaser.GameObjects.Container {
         ? MissionBridge.spendMissionWood(build.woodCost)
         : this.spendSaveWood(build.woodCost);
       if (!ok) {
-        MissionBridge.addGold(build.goldCost);
+        MissionBridge.addGold(goldCost);
         if (build.ironCost > 0) {
           if (useMissionSupplies) MissionBridge.refundMissionIron(build.ironCost);
           else MissionBridge.refundSaveIron(build.ironCost);

@@ -1,4 +1,5 @@
 import { InputBridge, type TouchAction } from '@/game/systems/InputBridge';
+import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
 import { getBuildDefinition } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { SoundManager } from '@/game/systems/SoundManager';
@@ -11,6 +12,8 @@ export function TouchControls() {
   const sentinelUnlocked = useGameStore((s) => s.mission.sentinelUnlocked);
   const lionUnlocked = useGameStore((s) => s.save.upgrades.lion_level ?? 0) >= 1;
   const isAmbush = useGameStore((s) => s.mission.isAmbush);
+  const heroId = useGameStore((s) => s.mission.heroId);
+  const awaitingWave = useGameStore((s) => s.mission.awaitingWaveStart);
   const selectedBuild = useGameStore((s) => s.save.selectedBuild);
   const buildName = getBuildDefinition(selectedBuild)?.name ?? 'Tower';
 
@@ -83,7 +86,23 @@ export function TouchControls() {
         {lionUnlocked ? (
           <TouchBtn label="🦁" onClick={bindPulse('roar')} className="col-span-3" />
         ) : null}
+        {heroId ? (
+          <TouchBtn label="✨" onClick={bindPulse('hero_ability')} className="col-span-3" />
+        ) : null}
       </div>
+
+      {awaitingWave && (
+        <div className="pointer-events-auto absolute bottom-36 left-1/2 -translate-x-1/2">
+          <TouchBtn
+            label="🔔"
+            className="h-16 w-28 rounded-full text-sm font-bold"
+            onClick={() => {
+              SoundManager.play('wave');
+              MissionControlBridge.requestStartWave();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

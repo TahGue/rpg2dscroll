@@ -64,6 +64,11 @@ export class GateGuard extends Phaser.GameObjects.Container {
     });
   }
 
+  heal(amount: number): void {
+    if (!this.isAlive()) return;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+  }
+
   takeDamage(amount: number): void {
     if (!this.isAlive()) return;
     this.hp -= amount;

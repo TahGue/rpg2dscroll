@@ -51,4 +51,6 @@ export type TouchAction =
   | 'bow'
   | 'spear'
   | 'war_cry'
-  | 'sentinel';
+  | 'sentinel'
+  | 'hero_ability'
+  | 'start_wave';

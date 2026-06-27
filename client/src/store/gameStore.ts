@@ -33,6 +33,11 @@ import {
   canFastTravelTo,
   isPrepMission,
   getMissionPrepConfig,
+  pickDefaultHeroForMission,
+  applyDefenseSkillPrepBonus,
+  getWorldEvent,
+  getDefenseSkillCost,
+  DEFENSE_SKILLS,
   type GameSettings,
   type LocalSaveData,
   type MissionType,
@@ -52,6 +57,7 @@ export type GameScreen =
   | 'world_map'
   | 'mission_prep'
   | 'mission'
+  | 'defense_skills'
   | 'upgrade'
   | 'camp_upgrades'
   | 'relic_upgrades'
@@ -162,6 +168,7 @@ interface GameStore {
   /** Mission awaiting prep screen confirmation. */
   prepMissionId: string | null;
   overworldRecruitOffer: { heroId: string } | null;
+  overworldEventChoice: { poiId: string; eventId: string } | null;
   /** Screen to return to after mission abort/result. */
   missionReturnScreen: GameScreen;
   overworldInteract: { prompt: string | null; poiId: string | null; poi: OverworldPOI | null };
@@ -188,6 +195,10 @@ interface GameStore {
   recruitHero: (heroId: string) => void;
   unlockBlueprint: (blueprintId: BuildChoice) => boolean;
   updateSaveFields: (partial: Partial<LocalSaveData>) => void;
+  upgradeDefenseSkill: (skillId: string) => boolean;
+  openWorldEvent: (poiId: string, eventId: string) => void;
+  resolveWorldEventChoice: (choiceId: string) => void;
+  dismissWorldEvent: () => void;
   startMission: (missionId: string, returnScreen?: GameScreen, loadout?: MissionLoadout) => void;
   abortMission: () => void;
   endMission: (result: Omit<NonNullable<GameStore['lastMissionResult']>, 'missionId' | 'levelsGained' | 'score' | 'isNewBest' | 'elapsedMs' | 'speedBonusGold' | 'newAchievements' | 'missionType' | 'isAmbush' | 'isShrine' | 'isCaravan' | 'isSurvive' | 'isOasis' | 'waterEarned' | 'campaignJustCompleted' | 'inventoryEarned' | 'ngPlusBonusGold' | 'ngPlusBonusXp' | 'unlockedLocationIds'>) => void;
@@ -328,6 +339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pendingMissionId: null,
   prepMissionId: null,
   overworldRecruitOffer: null,
+  overworldEventChoice: null,
   missionReturnScreen: 'world_explore',
   overworldInteract: { prompt: null, poiId: null, poi: null },
   overworldDialog: null,
@@ -371,9 +383,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   openMissionPrep: (missionId) => {
+    const save = get().save;
+    const defaultHero = pickDefaultHeroForMission(missionId, save.recruitedHeroes);
+    const updated =
+      defaultHero && save.selectedHeroId !== defaultHero
+        ? { ...save, selectedHeroId: defaultHero }
+        : save;
+    if (updated !== save) persistSave(updated);
     set({
       prepMissionId: missionId,
       screen: 'mission_prep',
+      save: updated,
       missionReturnScreen: get().missionReturnScreen,
     });
   },
@@ -469,14 +489,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const missionDef = getMissionById(missionId);
     let playerMaxHp = playerMaxFromSave(save);
     const gateMaxHp = gateMaxFromSave(save);
-    const prepConfig = getMissionPrepConfig(missionId);
-    const usePrep = Boolean(prepConfig);
+    const prepBase = getMissionPrepConfig(missionId);
 
     let updatedSave = save;
     if (save.restBonusActive) {
       playerMaxHp = Math.round(playerMaxHp * 1.1);
       updatedSave = { ...updatedSave, restBonusActive: false };
     }
+
+    const prepConfig = prepBase ? applyDefenseSkillPrepBonus(prepBase, updatedSave) : null;
+    const usePrep = Boolean(prepConfig);
 
     const boost = updatedSave.missionBoost;
     let damageMultiplier = 1 + (updatedSave.campUpgrades.war_camp ?? 0) * 0.05;
@@ -1128,4 +1150,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   dismissDialog: () => set({ pendingDialog: null }),
+
+  upgradeDefenseSkill: (skillId) => {
+    const def = DEFENSE_SKILLS.find((s) => s.id === skillId);
+    if (!def) return false;
+    const { save } = get();
+    const level = save.defenseSkills[skillId] ?? 0;
+    if (level >= def.maxLevel) return false;
+    const cost = getDefenseSkillCost(def, level);
+    if (save.gold < cost) return false;
+    const updated = {
+      ...save,
+      gold: save.gold - cost,
+      defenseSkills: { ...save.defenseSkills, [skillId]: level + 1 },
+    };
+    persistSave(updated);
+    set({ save: updated });
+    return true;
+  },
+
+  openWorldEvent: (poiId, eventId) => {
+    set({ overworldEventChoice: { poiId, eventId } });
+  },
+
+  resolveWorldEventChoice: (choiceId) => {
+    const { overworldEventChoice, save } = get();
+    if (!overworldEventChoice) return;
+    const event = getWorldEvent(overworldEventChoice.eventId);
+    const choice = event?.choices.find((c) => c.id === choiceId);
+    if (!choice) return;
+
+    let updated = {
+      ...save,
+      completedOverworldEvents: [...save.completedOverworldEvents, overworldEventChoice.poiId],
+      gold: save.gold + (choice.gold ?? 0),
+      wood: save.wood + (choice.wood ?? 0),
+      iron: save.iron + (choice.iron ?? 0),
+      unlockedLore:
+        choice.loreId && !save.unlockedLore.includes(choice.loreId)
+          ? [...save.unlockedLore, choice.loreId]
+          : save.unlockedLore,
+      unlockedBlueprints:
+        choice.blueprintId && !save.unlockedBlueprints.includes(choice.blueprintId)
+          ? [...save.unlockedBlueprints, choice.blueprintId as BuildChoice]
+          : save.unlockedBlueprints,
+    };
+    updated = { ...updated, inventory: syncMaterialsToInventory(updated) };
+    persistSave(updated);
+    set({ save: updated, overworldEventChoice: null });
+  },
+
+  dismissWorldEvent: () => set({ overworldEventChoice: null }),
 }));

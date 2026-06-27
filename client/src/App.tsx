@@ -11,6 +11,7 @@ import { PostGameScreen } from '@/ui/screens/PostGameScreen';
 import { MissionResultScreen } from '@/ui/screens/MissionResultScreen';
 import { MissionView } from '@/ui/screens/MissionView';
 import { MissionPrepScreen } from '@/ui/screens/MissionPrepScreen';
+import { DefenseSkillsScreen } from '@/ui/screens/DefenseSkillsScreen';
 import { SettingsScreen } from '@/ui/screens/SettingsScreen';
 import { LoginScreen } from '@/ui/screens/LoginScreen';
 import { LeaderboardScreen } from '@/ui/screens/LeaderboardScreen';
@@ -74,6 +75,7 @@ export default function App() {
         {screen === 'achievements' && <AchievementsScreen />}
         {screen === 'lore' && <LoreScreen />}
         {screen === 'mission_result' && <MissionResultScreen />}
+        {screen === 'defense_skills' && <DefenseSkillsScreen />}
         {screen === 'mission_prep' && <MissionPrepRoute />}
         {screen === 'mission' && <MissionView />}
       </ScreenTransition>

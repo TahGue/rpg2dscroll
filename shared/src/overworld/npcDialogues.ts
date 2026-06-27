@@ -27,6 +27,7 @@ export const OVERWORLD_NPCS: Record<string, OverworldNpcDialogue> = {
     id: 'water_keeper',
     name: 'Water Keeper',
     lines: [
+      'Yusuf guards our well with old rites. After Nahran held, he will stand with any who defend the oasis.',
       'Bandits poisoned the outer wells. If this oasis falls, the road dies.',
       'Stand with us — defend the well and caravans will remember Nahran.',
     ],

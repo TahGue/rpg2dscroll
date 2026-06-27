@@ -3,9 +3,12 @@ import {
   AISHA,
   BLUEPRINT_LABELS,
   GATE_GUARD,
+  YUSUF,
+  applyDefenseSkillPrepBonus,
   getHero,
   getMissionById,
   getMissionPrepConfig,
+  getRecruitedHeroes,
   isHeroRecruited,
   type MissionLoadout,
 } from '@malik/shared';
@@ -21,11 +24,15 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
   const confirmMissionPrep = useGameStore((s) => s.confirmMissionPrep);
 
   const mission = getMissionById(missionId);
-  const prepConfig = getMissionPrepConfig(missionId);
-  const aishaRecruited = isHeroRecruited(save.recruitedHeroes, 'aisha');
-  const heroId = save.selectedHeroId === 'aisha' && aishaRecruited ? 'aisha' : null;
+  const prepBase = getMissionPrepConfig(missionId);
+  const prepConfig = prepBase ? applyDefenseSkillPrepBonus(prepBase, save) : null;
+  const recruitedHeroes = getRecruitedHeroes(save.recruitedHeroes);
+  const selectedHeroId =
+    save.selectedHeroId && isHeroRecruited(save.recruitedHeroes, save.selectedHeroId)
+      ? save.selectedHeroId
+      : null;
   const gateGuard = save.prepUseGateGuard;
-  const hero = heroId ? getHero(heroId) : null;
+  const hero = selectedHeroId ? getHero(selectedHeroId) : null;
 
   if (!mission || !prepConfig) {
     return null;
@@ -34,17 +41,16 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
   const handleConfirm = () => {
     SoundManager.play('click');
     const loadout: MissionLoadout = {
-      heroId: aishaRecruited ? heroId : null,
+      heroId: selectedHeroId,
       gateGuard,
     };
     confirmMissionPrep(missionId, loadout);
   };
 
-  const toggleHero = () => {
-    if (!aishaRecruited) return;
+  const selectHero = (heroId: string) => {
     SoundManager.play('click');
     useGameStore.getState().updateSaveFields({
-      selectedHeroId: heroId ? null : 'aisha',
+      selectedHeroId: selectedHeroId === heroId ? null : heroId,
     });
   };
 
@@ -84,40 +90,52 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
                 </li>
               ))}
               {!save.unlockedBlueprints.includes('spike_trap') && (
-                <li className="text-white/40">? Spike Trap — find the broken caravan</li>
+                <li className="text-white/40">? Spike Trap — search the broken caravan</li>
               )}
             </ul>
           </section>
         </div>
 
         <section className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-          <h2 className="text-sm font-semibold text-desert-gold">Allies</h2>
+          <h2 className="text-sm font-semibold text-desert-gold">Hero support</h2>
           <div className="mt-3 space-y-3">
-            <PrepToggle
-              title={AISHA.name}
-              subtitle={
-                aishaRecruited
-                  ? `${AISHA.title} — ${AISHA.activeName}`
-                  : 'Recruit at the Camp Blacksmith in Nahran'
-              }
-              detail={aishaRecruited ? AISHA.passiveDescription : 'Not yet recruited'}
-              active={Boolean(heroId)}
-              disabled={!aishaRecruited}
-              onClick={toggleHero}
-            />
+            {[AISHA, YUSUF].map((def) => {
+              const recruited = isHeroRecruited(save.recruitedHeroes, def.id);
+              return (
+                <PrepToggle
+                  key={def.id}
+                  title={def.name}
+                  subtitle={
+                    recruited
+                      ? `${def.title} — ${def.activeName}`
+                      : def.id === 'aisha'
+                        ? 'Recruit at Camp Blacksmith'
+                        : 'Recruit at Water Keeper after Night Attack'
+                  }
+                  detail={recruited ? def.passiveDescription : 'Not yet recruited'}
+                  active={selectedHeroId === def.id}
+                  disabled={!recruited}
+                  onClick={() => selectHero(def.id)}
+                />
+              );
+            })}
+            {recruitedHeroes.length === 0 && (
+              <p className="text-xs text-amber-200/90">Recruit at least one hero in the overworld before battle.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <h2 className="text-sm font-semibold text-desert-gold">NPC defender</h2>
+          <div className="mt-3">
             <PrepToggle
               title={GATE_GUARD.name}
-              subtitle="NPC defender"
+              subtitle="Hold the gate line"
               detail={GATE_GUARD.description}
               active={gateGuard}
               onClick={toggleGuard}
             />
           </div>
-          {!aishaRecruited && (
-            <p className="mt-3 text-xs text-amber-200/90">
-              Visit the Camp Blacksmith to recruit Aisha before the gate battle.
-            </p>
-          )}
         </section>
 
         {hero && (
@@ -148,7 +166,7 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
         </div>
 
         <p className="mt-4 text-center text-xs text-white/40">
-          You will have unlimited time to build and repair before ringing the war bell.
+          Unlimited prep time — ring the war bell when ready (Y key).
         </p>
       </div>
     </div>

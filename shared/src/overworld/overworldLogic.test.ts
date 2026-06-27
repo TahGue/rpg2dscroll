@@ -72,7 +72,7 @@ describe('overworld logic', () => {
       unlockedBlueprints: ['arrow_tower', 'spike_trap'],
     };
     expect(getOverworldQuestHint(ready)).toContain('Nahran Gate');
-    expect(getOverworldQuestHint({ ...ready, completedMissions: ['mission-night-attack'] })).toContain('Silent Oasis');
+    expect(getOverworldQuestHint({ ...ready, completedMissions: ['mission-night-attack'] })).toContain('Yusuf');
   });
 
   it('lists fast travel after oasis is visited', () => {

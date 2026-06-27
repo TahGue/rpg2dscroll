@@ -56,12 +56,12 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
     },
     {
       id: 'poi-broken-cart',
-      kind: 'cart',
+      kind: 'event',
       x: 780,
       y: 980,
       radius: 60,
       label: 'Broken Caravan',
-      chestGold: 25,
+      eventId: 'broken_caravan',
     },
     {
       id: 'poi-hyena-tracks',

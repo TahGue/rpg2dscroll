@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getUnseenActForMission, getFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA } from '@malik/shared';
+import { getUnseenActForMission, getFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { WorldExploreManager } from '@/game/WorldExploreManager';
 import { OverworldBridge } from '@/game/systems/OverworldBridge';
@@ -42,13 +42,16 @@ export function WorldExploreView() {
   const fastTravelTo = useGameStore((s) => s.fastTravelTo);
   const recruitOffer = useGameStore((s) => s.overworldRecruitOffer);
   const recruitHero = useGameStore((s) => s.recruitHero);
+  const eventChoice = useGameStore((s) => s.overworldEventChoice);
+  const resolveWorldEventChoice = useGameStore((s) => s.resolveWorldEventChoice);
+  const dismissWorldEvent = useGameStore((s) => s.dismissWorldEvent);
 
   const [shopOpen, setShopOpen] = useState(false);
   const regionId = save.overworldPosition.regionId || 'nahran-outskirts';
   const regionName = getOverworldRegion(regionId).name;
 
   const overlayOpen = Boolean(
-    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingDialog || mapOpen || recruitOffer,
+    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingDialog || mapOpen || recruitOffer || eventChoice,
   );
 
   useEffect(() => {
@@ -119,6 +122,7 @@ export function WorldExploreView() {
         <NavBtn label="Map (M)" onClick={() => { SoundManager.play('click'); setOverworldMapOpen(true); }} />
         <NavBtn label="Campaign Overview" onClick={() => navigate('world_map')} />
         <NavBtn label="Inventory" onClick={() => navigate('inventory')} />
+        <NavBtn label="Defense Skills" onClick={() => navigate('defense_skills')} />
         <NavBtn label="Upgrades" onClick={() => navigate('upgrade')} />
         <NavBtn label="Lore" onClick={() => navigate('lore')} />
       </div>
@@ -200,6 +204,24 @@ export function WorldExploreView() {
         />
       )}
 
+      {eventChoice && (() => {
+        const event = getWorldEvent(eventChoice.eventId);
+        if (!event) return null;
+        return (
+          <WorldEventModal
+            event={event}
+            onChoose={(choiceId) => {
+              SoundManager.play('gold');
+              resolveWorldEventChoice(choiceId);
+            }}
+            onClose={() => {
+              SoundManager.play('click');
+              dismissWorldEvent();
+            }}
+          />
+        );
+      })()}
+
       {recruitOffer && (
         <RecruitOfferModal
           heroId={recruitOffer.heroId}
@@ -273,6 +295,46 @@ function MissionOfferModal({
             Prepare defense
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function WorldEventModal({
+  event,
+  onChoose,
+  onClose,
+}: {
+  event: NonNullable<ReturnType<typeof getWorldEvent>>;
+  onChoose: (choiceId: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl border border-amber-400/40 bg-desert-night/95 p-8 text-white shadow-2xl">
+        <p className="mb-1 text-xs uppercase tracking-widest text-amber-300">World event</p>
+        <h3 className="font-display mb-3 text-2xl text-desert-gold">{event.title}</h3>
+        <p className="mb-6 text-sm leading-relaxed text-white/75">{event.intro}</p>
+        <div className="space-y-3">
+          {event.choices.map((choice) => (
+            <button
+              key={choice.id}
+              type="button"
+              onClick={() => onChoose(choice.id)}
+              className="w-full rounded-lg border border-white/15 bg-black/30 px-4 py-3 text-left hover:border-desert-gold/50 hover:bg-desert-gold/5"
+            >
+              <p className="font-semibold text-desert-gold">{choice.label}</p>
+              <p className="mt-1 text-xs text-white/60">{choice.description}</p>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 w-full rounded-lg border border-white/20 py-2 text-sm text-white/60 hover:bg-white/5"
+        >
+          Leave for now
+        </button>
       </div>
     </div>
   );
