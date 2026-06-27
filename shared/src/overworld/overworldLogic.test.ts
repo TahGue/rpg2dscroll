@@ -12,6 +12,7 @@ import {
 } from './overworldLogic';
 import { SCORPION_VALLEY } from './scorpionValley';
 import {
+  getAllFastTravelDestinations,
   getActiveRegionTransitions,
   getRegionTransitionAtPoint,
   isRegionTransitionUnlocked,
@@ -122,5 +123,33 @@ describe('overworld logic', () => {
     };
     const destinations = getFastTravelDestinations(SCORPION_VALLEY, save);
     expect(destinations.some((p) => p.id === 'poi-valley-camp')).toBe(true);
+  });
+
+  it('lists cross-region fast travel from visited regions', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      completedMissions: ['mission-night-attack'],
+      visitedOverworldPOIs: ['poi-silent-oasis', 'poi-valley-camp'],
+      visitedOverworldRegions: ['nahran-outskirts', 'scorpion-valley'],
+    };
+    const all = getAllFastTravelDestinations(save);
+    expect(all.some((d) => d.poi.id === 'poi-nahran-camp')).toBe(true);
+    expect(all.some((d) => d.poi.id === 'poi-valley-camp')).toBe(true);
+  });
+
+  it('reveals sandstorm gate after silent oasis', () => {
+    const save = { ...DEFAULT_SAVE, completedMissions: ['mission-night-attack', 'mission-silent-oasis'] };
+    const gate = NAHRAN_OUTSKIRTS.pois.find((p) => p.id === 'poi-sandstorm-gate')!;
+    expect(isOverworldPOIVisible(gate, save)).toBe(true);
+  });
+
+  it('reveals sentinel shrine after watchtower', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      completedMissions: ['mission-scorpion-nest', 'mission-broken-watchtower'],
+    };
+    const shrine = SCORPION_VALLEY.pois.find((p) => p.id === 'poi-sentinel-shrine')!;
+    expect(isOverworldPOIVisible(shrine, save)).toBe(true);
+    expect(isOverworldPOIUnlocked(shrine, save)).toBe(true);
   });
 });

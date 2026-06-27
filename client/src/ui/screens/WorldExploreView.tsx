@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getUnseenActForMission, getFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent } from '@malik/shared';
+import { getUnseenActForMission, getAllFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { WorldExploreManager } from '@/game/WorldExploreManager';
 import { OverworldBridge } from '@/game/systems/OverworldBridge';
@@ -92,11 +92,13 @@ export function WorldExploreView() {
     setScreen(screen);
   };
 
-  const handleFastTravel = (poiId: string) => {
-    const poi = getOverworldRegion(regionId).pois.find((p) => p.id === poiId);
-    if (!poi || !fastTravelTo(poiId)) return;
+  const handleFastTravel = (poiId: string, targetRegionId: string) => {
+    const poi = getOverworldRegion(targetRegionId).pois.find((p) => p.id === poiId);
+    if (!poi || !fastTravelTo(poiId, targetRegionId)) return;
     SoundManager.play('click');
-    managerRef.current?.teleport(poi.x, poi.y);
+    if (targetRegionId === regionId) {
+      managerRef.current?.teleport(poi.x, poi.y);
+    }
   };
 
   return (
@@ -397,7 +399,7 @@ function CampOverlay({
 }: {
   regionId: string;
   onClose: () => void;
-  onFastTravel: (poiId: string) => void;
+  onFastTravel: (poiId: string, targetRegionId: string) => void;
   onRest: () => void;
   onShop: () => void;
   onUpgrades: () => void;
@@ -407,15 +409,19 @@ function CampOverlay({
   onLore: () => void;
 }) {
   const save = useGameStore((s) => s.save);
-  const travelPoints = getFastTravelDestinations(getOverworldRegion(regionId), save);
+  const region = getOverworldRegion(regionId);
+  const travelPoints = getAllFastTravelDestinations(save);
+  const campTitle = region.id === 'scorpion-valley' ? 'Valley Camp' : 'Nahran Camp';
+  const campBlurb =
+    region.id === 'scorpion-valley'
+      ? 'Trappers and miners shelter in the canyon. Hamza keeps watch over the poison pools below.'
+      : 'Tents glow against the dunes. Malik rests with scouts, smiths, and guards before the next battle.';
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-desert-gold/40 bg-desert-night p-8 text-white">
-        <h3 className="font-display mb-2 text-2xl text-desert-gold">Nahran Camp</h3>
-        <p className="mb-4 text-white/70">
-          Tents glow against the dunes. Malik rests with scouts, smiths, and guards before the next battle.
-        </p>
+        <h3 className="font-display mb-2 text-2xl text-desert-gold">{campTitle}</h3>
+        <p className="mb-4 text-white/70">{campBlurb}</p>
         <div className="mb-6 space-y-1 rounded-lg bg-black/30 p-4 text-sm">
           <p>Level {save.level} · {save.gold} gold · {save.water ?? 0} water</p>
           <p className="text-white/50">Missions completed: {save.completedMissions.length}</p>
@@ -425,14 +431,17 @@ function CampOverlay({
           <div className="mb-4 rounded-lg border border-teal-400/30 bg-teal-950/20 p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-teal-300">Fast travel</p>
             <div className="space-y-2">
-              {travelPoints.map((poi) => (
+              {travelPoints.map(({ regionId: destRegionId, regionName, poi }) => (
                 <button
-                  key={poi.id}
+                  key={`${destRegionId}:${poi.id}`}
                   type="button"
-                  onClick={() => onFastTravel(poi.id)}
+                  onClick={() => onFastTravel(poi.id, destRegionId)}
                   className="w-full rounded-lg border border-teal-400/40 py-2 text-sm text-teal-100 hover:bg-teal-500/10"
                 >
                   → {poi.label}
+                  {destRegionId !== regionId && (
+                    <span className="text-teal-300/70"> · {regionName}</span>
+                  )}
                 </button>
               ))}
             </div>

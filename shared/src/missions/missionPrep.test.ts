@@ -4,6 +4,7 @@ import { canPlaceBuildType, getMissionPrepConfig, isPrepMission } from './missio
 describe('missionPrep', () => {
   it('identifies Nahran prep missions', () => {
     expect(isPrepMission('mission-night-attack')).toBe(true);
+    expect(isPrepMission('mission-scorpion-nest')).toBe(true);
     expect(isPrepMission('mission-shadow-emir')).toBe(false);
   });
 
@@ -12,6 +13,12 @@ describe('missionPrep', () => {
     expect(cfg?.startingGold).toBe(100);
     expect(cfg?.maxTowerBuilds).toBe(2);
     expect(cfg?.maxTrapBuilds).toBe(3);
+  });
+
+  it('returns trap-heavy budget for Scorpion Nest', () => {
+    const cfg = getMissionPrepConfig('mission-scorpion-nest');
+    expect(cfg?.maxTrapBuilds).toBe(4);
+    expect(cfg?.startingIron).toBe(8);
   });
 
   it('enforces tower and trap slot limits', () => {

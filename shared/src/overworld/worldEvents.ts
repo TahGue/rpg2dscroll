@@ -48,6 +48,37 @@ export const WORLD_EVENTS: Record<string, WorldEventDefinition> = {
       },
     ],
   },
+  sandstorm_gate: {
+    id: 'sandstorm_gate',
+    title: 'Sandstorm Gate',
+    intro:
+      'A wall of sand blocks the southern road. Scouts say the storm will pass — or you can push through before it worsens.',
+    choices: [
+      {
+        id: 'wait',
+        label: 'Wait for the wind to die',
+        description: 'Shelter with the caravan and gather supplies.',
+        gold: 20,
+        wood: 3,
+      },
+      {
+        id: 'push',
+        label: 'Push through the storm',
+        description: 'Brave the gale and salvage iron from buried crates.',
+        gold: 10,
+        iron: 3,
+        loreId: 'lore-bandit-tracks',
+      },
+      {
+        id: 'scout',
+        label: 'Send scouts around the dunes',
+        description: 'Find a safer path south into the canyon.',
+        gold: 15,
+        wood: 2,
+        iron: 1,
+      },
+    ],
+  },
 };
 
 export function getWorldEvent(eventId: string): WorldEventDefinition | undefined {

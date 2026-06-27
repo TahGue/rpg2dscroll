@@ -94,6 +94,17 @@ export const SCORPION_VALLEY: OverworldRegion = {
       unlockAfterMission: 'mission-scorpion-nest',
       revealAfterMission: 'mission-scorpion-nest',
     },
+    {
+      id: 'poi-sentinel-shrine',
+      kind: 'mission',
+      x: 1820,
+      y: 960,
+      radius: 85,
+      label: 'Shrine of the First Sentinels',
+      missionId: 'mission-shrine-sanctum',
+      revealAfterMission: 'mission-broken-watchtower',
+      unlockAfterMission: 'mission-broken-watchtower',
+    },
   ],
   patrols: [
     {

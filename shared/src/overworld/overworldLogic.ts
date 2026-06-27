@@ -1,5 +1,6 @@
 import type { LocalSaveData } from '../types/save';
 import type { OverworldPOI, OverworldPatrol, OverworldRegion, OverworldRegionTransition } from './overworldTypes';
+import { getOverworldRegion } from './nahranOutskirts';
 
 export const OVERWORLD_CELL_SIZE = 100;
 export const OVERWORLD_EXPLORE_RADIUS = 130;
@@ -95,16 +96,38 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-scorpion-nest')) {
     return 'Descend to the Scorpion Nest and hold the barricade';
   }
-  if (!done.includes('mission-red-dune-pass')) {
-    return 'March south through Red Dune Pass and hold the choke point';
-  }
   if (!done.includes('mission-broken-watchtower')) {
-    return 'Climb to the Broken Watchtower and awaken the ancient relic';
+    return 'Follow Sentinel Road east to the Broken Watchtower';
+  }
+  if (!done.includes('mission-shrine-sanctum')) {
+    return 'Enter the Shrine of the First Sentinels and claim a relic';
+  }
+  if (!done.includes('mission-red-dune-pass')) {
+    return 'Optional: hold Red Dune Pass on the Nahran road';
   }
   if (!done.includes('mission-bandit-road')) {
     return 'Optional: clear Bandit Road ambushes for gold and leather';
   }
-  return 'Explore the valley — Sentinel Road opens after the nest falls';
+  return 'Explore the ruins — Black Eclipse Gate awaits beyond the shrine';
+}
+
+export interface OverworldFastTravelDestination {
+  regionId: string;
+  regionName: string;
+  poi: OverworldPOI;
+}
+
+export function getAllFastTravelDestinations(
+  save: Pick<LocalSaveData, 'completedMissions' | 'visitedOverworldPOIs' | 'visitedOverworldRegions'>,
+): OverworldFastTravelDestination[] {
+  const destinations: OverworldFastTravelDestination[] = [];
+  for (const regionId of save.visitedOverworldRegions) {
+    const region = getOverworldRegion(regionId);
+    for (const poi of getFastTravelDestinations(region, save)) {
+      destinations.push({ regionId, regionName: region.name, poi });
+    }
+  }
+  return destinations;
 }
 
 export function isRegionTransitionUnlocked(
@@ -217,12 +240,16 @@ export function getOverworldPOIInteractHint(
       return save.completedOverworldEvents.includes(poi.id)
         ? poi.eventId === 'broken_caravan'
           ? 'Wreck picked clean'
-          : 'Tracks faded into the sand'
+          : poi.eventId === 'sandstorm_gate'
+            ? 'Storm tracks faded'
+            : 'Tracks faded into the sand'
         : poi.eventId === 'broken_caravan'
           ? 'Investigate wreckage'
-          : poi.eventId === 'poison_pools'
-            ? 'Study the poison pools'
-            : 'Investigate tracks';
+          : poi.eventId === 'sandstorm_gate'
+            ? 'Face the sandstorm'
+            : poi.eventId === 'poison_pools'
+              ? 'Study the poison pools'
+              : 'Investigate tracks';
     default:
       return poi.label;
   }

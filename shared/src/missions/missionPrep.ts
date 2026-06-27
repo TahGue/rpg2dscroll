@@ -1,6 +1,10 @@
 import type { BuildChoice } from '../types/save';
 
-export const PREP_MISSION_IDS = ['mission-night-attack', 'mission-silent-oasis'] as const;
+export const PREP_MISSION_IDS = [
+  'mission-night-attack',
+  'mission-silent-oasis',
+  'mission-scorpion-nest',
+] as const;
 
 export type PrepMissionId = (typeof PREP_MISSION_IDS)[number];
 
@@ -26,6 +30,13 @@ export const MISSION_PREP_CONFIGS: Record<PrepMissionId, MissionPrepConfig> = {
     startingIron: 4,
     maxTowerBuilds: 2,
     maxTrapBuilds: 3,
+  },
+  'mission-scorpion-nest': {
+    startingGold: 140,
+    startingWood: 6,
+    startingIron: 8,
+    maxTowerBuilds: 2,
+    maxTrapBuilds: 4,
   },
 };
 

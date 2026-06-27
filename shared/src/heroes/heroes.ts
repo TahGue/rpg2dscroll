@@ -77,6 +77,7 @@ export const HEROES: Record<string, HeroDefinition> = {
 export const MISSION_HERO_PREFERENCE: Partial<Record<PrepMissionId, string>> = {
   'mission-night-attack': 'aisha',
   'mission-silent-oasis': 'yusuf',
+  'mission-scorpion-nest': 'hamza',
 };
 
 export function getHero(id: string): HeroDefinition | undefined {

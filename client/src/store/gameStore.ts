@@ -245,7 +245,7 @@ interface GameStore {
   refreshOverworldAfterMission: () => void;
   setOverworldMapOpen: (open: boolean) => void;
   toggleOverworldMap: () => void;
-  fastTravelTo: (poiId: string) => boolean;
+  fastTravelTo: (poiId: string, targetRegionId?: string) => boolean;
   travelToOverworldRegion: (targetRegionId: string, targetX: number, targetY: number) => void;
 }
 
@@ -452,9 +452,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setOverworldMapOpen: (open) => set({ overworldMapOpen: open }),
   toggleOverworldMap: () => set((s) => ({ overworldMapOpen: !s.overworldMapOpen })),
 
-  fastTravelTo: (poiId) => {
+  fastTravelTo: (poiId, targetRegionId) => {
     const { save } = get();
-    const regionId = save.overworldPosition.regionId || 'nahran-outskirts';
+    const regionId = targetRegionId ?? save.overworldPosition.regionId ?? 'nahran-outskirts';
     const region = getOverworldRegion(regionId);
     const poi = region.pois.find((p) => p.id === poiId);
     if (!poi || !canFastTravelTo(poi, save)) return false;

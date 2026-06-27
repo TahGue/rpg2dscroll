@@ -1,9 +1,8 @@
 import { useGameStore } from '@/store/gameStore';
 import {
-  AISHA,
   BLUEPRINT_LABELS,
   GATE_GUARD,
-  YUSUF,
+  HEROES,
   applyDefenseSkillPrepBonus,
   getHero,
   getMissionById,
@@ -61,6 +60,19 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
     });
   };
 
+  const heroRecruitHint = (heroId: string): string => {
+    switch (heroId) {
+      case 'aisha':
+        return 'Recruit at Camp Blacksmith';
+      case 'yusuf':
+        return 'Recruit at Water Keeper after Night Attack';
+      case 'hamza':
+        return 'Recruit at Valley Camp in Scorpion Valley';
+      default:
+        return 'Not yet recruited';
+    }
+  };
+
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto bg-desert-night/95 p-4">
       <div className="w-full max-w-2xl rounded-2xl border border-desert-gold/40 bg-black/70 p-6 text-white shadow-2xl sm:p-8">
@@ -99,19 +111,13 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
         <section className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
           <h2 className="text-sm font-semibold text-desert-gold">Hero support</h2>
           <div className="mt-3 space-y-3">
-            {[AISHA, YUSUF].map((def) => {
+            {Object.values(HEROES).map((def) => {
               const recruited = isHeroRecruited(save.recruitedHeroes, def.id);
               return (
                 <PrepToggle
                   key={def.id}
                   title={def.name}
-                  subtitle={
-                    recruited
-                      ? `${def.title} — ${def.activeName}`
-                      : def.id === 'aisha'
-                        ? 'Recruit at Camp Blacksmith'
-                        : 'Recruit at Water Keeper after Night Attack'
-                  }
+                  subtitle={recruited ? `${def.title} — ${def.activeName}` : heroRecruitHint(def.id)}
                   detail={recruited ? def.passiveDescription : 'Not yet recruited'}
                   active={selectedHeroId === def.id}
                   disabled={!recruited}

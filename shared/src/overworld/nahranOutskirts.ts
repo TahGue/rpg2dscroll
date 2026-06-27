@@ -175,6 +175,16 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
       missionId: 'mission-red-dune-pass',
       unlockAfterMission: 'mission-silent-oasis',
     },
+    {
+      id: 'poi-sandstorm-gate',
+      kind: 'event',
+      x: 1240,
+      y: 1420,
+      radius: 75,
+      label: 'Sandstorm Gate',
+      eventId: 'sandstorm_gate',
+      revealAfterMission: 'mission-silent-oasis',
+    },
   ],
   patrols: [
     {

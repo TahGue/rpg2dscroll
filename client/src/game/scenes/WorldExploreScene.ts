@@ -361,7 +361,7 @@ export class WorldExploreScene extends Phaser.Scene {
         }
         break;
       case 'event':
-        if (poi.eventId === 'broken_caravan') {
+        if (poi.eventId === 'broken_caravan' || poi.eventId === 'sandstorm_gate') {
           if (!save.completedOverworldEvents.includes(poi.id)) {
             useGameStore.getState().openWorldEvent(poi.id, poi.eventId);
           }
@@ -487,6 +487,8 @@ export class WorldExploreScene extends Phaser.Scene {
       this.add.image(980, 1150, 'dune_far').setOrigin(0.5, 1).setTint(0x4a3828).setScale(1.3).setDepth(2);
       this.add.rectangle(1680, 820, 60, 80, 0x555555, 0.9).setDepth(4);
       this.add.text(1680, 780, 'SENTINEL', { fontSize: '9px', color: '#aa8866' }).setOrigin(0.5).setDepth(5);
+      this.add.circle(1820, 960, 28, 0x8866cc, 0.4).setDepth(4);
+      this.add.text(1820, 920, 'SHRINE', { fontSize: '9px', color: '#bbaadd' }).setOrigin(0.5).setDepth(5);
     } else {
       this.add.image(480, 1220, 'dune_mid').setOrigin(0.5, 1).setTint(0x8b6914).setScale(1.2);
       this.add.image(1100, 500, 'palm_tree').setOrigin(0.5, 1).setScale(1.4).setDepth(3);
