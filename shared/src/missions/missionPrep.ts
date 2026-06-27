@@ -1,4 +1,5 @@
 import type { BuildChoice } from '../types/save';
+import type { BattlePost, DefenderPost } from './battlePosts';
 
 export const PREP_MISSION_IDS = [
   'mission-night-attack',
@@ -90,7 +91,10 @@ export const MISSION_PREP_CONFIGS: Record<PrepMissionId, MissionPrepConfig> = {
 
 export interface MissionLoadout {
   heroId: string | null;
-  gateGuard: boolean;
+  /** Legacy toggle — synced from defenderPost when omitted. */
+  gateGuard?: boolean;
+  heroPost?: BattlePost;
+  defenderPost?: DefenderPost;
 }
 
 export function isPrepMission(missionId: string): missionId is PrepMissionId {

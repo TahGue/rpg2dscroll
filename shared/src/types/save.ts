@@ -1,6 +1,7 @@
 import type { MissionBoostType } from '../shop/shopItems';
 import { syncMaterialsToInventory } from '../world/materials';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings } from '../input/keyBindings';
+import { isBattlePost, isDefenderPost, type BattlePost, type DefenderPost } from '../missions/battlePosts';
 
 export type LionMode = 'follow' | 'guard' | 'guard_left' | 'guard_right' | 'aggressive';
 
@@ -77,6 +78,10 @@ export interface LocalSaveData {
   unlockedBlueprints: string[];
   /** Default gate guard assignment on prep screen. */
   prepUseGateGuard: boolean;
+  /** Default hero battlefield post on wide prep missions. */
+  prepHeroPost: BattlePost;
+  /** Default NPC defender post on wide prep missions. */
+  prepDefenderPost: DefenderPost;
   /** Defense skill tree — Phase 1 uses build_speed, repair_speed, cheaper_towers. */
   defenseSkills: Record<string, number>;
   /** Regions the player has entered at least once. */
@@ -141,6 +146,8 @@ export const DEFAULT_SAVE: LocalSaveData = {
   selectedHeroId: null,
   unlockedBlueprints: ['arrow_tower'],
   prepUseGateGuard: true,
+  prepHeroPost: 'gate',
+  prepDefenderPost: 'gate',
   defenseSkills: {
     build_speed: 0,
     repair_speed: 0,
@@ -195,6 +202,12 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     selectedHeroId: parsed.selectedHeroId ?? null,
     unlockedBlueprints: parsed.unlockedBlueprints ?? DEFAULT_SAVE.unlockedBlueprints,
     prepUseGateGuard: parsed.prepUseGateGuard ?? true,
+    prepHeroPost: isBattlePost(parsed.prepHeroPost) ? parsed.prepHeroPost : DEFAULT_SAVE.prepHeroPost,
+    prepDefenderPost: isDefenderPost(parsed.prepDefenderPost)
+      ? parsed.prepDefenderPost
+      : parsed.prepUseGateGuard
+        ? 'gate'
+        : 'none',
     defenseSkills: { ...DEFAULT_SAVE.defenseSkills, ...parsed.defenseSkills },
     visitedOverworldRegions: parsed.visitedOverworldRegions ?? DEFAULT_SAVE.visitedOverworldRegions,
   };

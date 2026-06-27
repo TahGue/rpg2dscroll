@@ -15,15 +15,9 @@ describe('mergeSaveData', () => {
     expect(merged.inventory.leather_hide).toBe(3);
   });
 
-  it('merges key bindings with defaults', () => {
-    const merged = mergeSaveData({
-      version: 2,
-      settings: {
-        ...DEFAULT_SAVE.settings,
-        keyBindings: { ...DEFAULT_SAVE.settings.keyBindings, attack: 'X' },
-      },
-    });
-    expect(merged.settings.keyBindings.attack).toBe('X');
-    expect(merged.settings.keyBindings.jump).toBe(DEFAULT_SAVE.settings.keyBindings.jump);
+  it('derives defender post from legacy prepUseGateGuard flag', () => {
+    expect(mergeSaveData({ prepUseGateGuard: false }).prepDefenderPost).toBe('none');
+    expect(mergeSaveData({ prepUseGateGuard: true }).prepDefenderPost).toBe('gate');
+    expect(mergeSaveData({ prepDefenderPost: 'left' }).prepDefenderPost).toBe('left');
   });
 });

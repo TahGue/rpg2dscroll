@@ -6,6 +6,7 @@ export * from './types/save';
 export * from './missions/locations';
 export * from './missions/missionLayouts';
 export * from './missions/wideBattlefield';
+export * from './missions/battlePosts';
 export * from './missions/waveStart';
 export * from './missions/unlockMap';
 export * from './missions/unlocks';

@@ -1,5 +1,5 @@
 import { useGameStore } from '@/store/gameStore';
-import { getBuildDefinition, getHero, getWaveStartHint, getWaveStartLabel, LION_MODE_LABELS, type LionMode } from '@malik/shared';
+import { getBuildDefinition, getDefenseLayout, getHero, getWaveStartHint, getWaveStartLabel, LION_MODE_LABELS, BATTLE_POST_LABELS, DEFENDER_POST_LABELS, type BattlePost, type DefenderPost, type LionMode } from '@malik/shared';
 import { buildMissionControlHints } from '@/game/utils/controlHints';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
@@ -12,6 +12,7 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
   const mission = useGameStore((s) => s.mission);
   const save = useGameStore((s) => s.save);
   const setLionMode = useGameStore((s) => s.setLionMode);
+  const setMissionPosts = useGameStore((s) => s.setMissionPosts);
   const selectedBuild = save.selectedBuild;
   const togglePause = useGameStore((s) => s.togglePause);
   const buildName = getBuildDefinition(selectedBuild)?.name ?? 'Arrow Tower';
@@ -59,6 +60,11 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
   const lionModes: LionMode[] = mission.isAmbush
     ? ['follow', 'guard', 'aggressive']
     : ['follow', 'guard', 'guard_left', 'guard_right', 'aggressive'];
+  const isWide = Boolean(mission.missionId && getDefenseLayout(mission.missionId).wideBattlefield);
+  const canRepositionPosts =
+    mission.usePrepBuildRules &&
+    isWide &&
+    (mission.preparing || mission.betweenWaves || mission.awaitingWaveStart);
 
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4">
@@ -189,7 +195,13 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           {mission.heroId && (
             <p className="text-[10px] text-cyan-300">
               Hero: {getHero(mission.heroId)?.name ?? mission.heroId}
-              {mission.gateGuardActive ? ' · Gate Guard' : ''}
+              {isWide ? ` · ${BATTLE_POST_LABELS[mission.heroPost]}` : ''}
+              {!isWide && mission.gateGuardActive ? ' · Gate Guard' : ''}
+            </p>
+          )}
+          {isWide && mission.defenderPost !== 'none' && (
+            <p className="text-[10px] text-blue-200/80">
+              Defender · {DEFENDER_POST_LABELS[mission.defenderPost]}
             </p>
           )}
           {mission.bossPhase > 0 && mission.bossName && (
@@ -208,7 +220,7 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           )}
           <p className="text-[10px] text-white/40">{formatTime(mission.elapsedMs)}</p>
         </div>
-        <div className="hidden rounded-lg bg-black/50 px-4 py-2 text-center backdrop-blur md:block">
+        <div className="hidden rounded-lg bg-black/50 px-4 py-2 text-center backdrop-blur md:block pointer-events-auto">
           <p>
             Gold <span className="font-bold text-desert-gold">{mission.goldCollected}</span>
           </p>
@@ -236,6 +248,54 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
                   {LION_MODE_LABELS[mode]}
                 </button>
               ))}
+            </div>
+          )}
+          {canRepositionPosts && mission.heroId && (
+            <div className="pointer-events-auto mt-2">
+              <p className="text-[9px] text-white/40">Hero post</p>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {(['gate', 'left', 'right'] as BattlePost[]).map((post) => (
+                  <button
+                    key={post}
+                    type="button"
+                    onClick={() => {
+                      setMissionPosts({ heroPost: post });
+                      SoundManager.play('click');
+                    }}
+                    className={`rounded border px-1.5 py-0.5 text-[9px] ${
+                      mission.heroPost === post
+                        ? 'border-cyan-400/60 bg-cyan-500/20 text-cyan-100'
+                        : 'border-white/15 text-white/50'
+                    }`}
+                  >
+                    {BATTLE_POST_LABELS[post]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {canRepositionPosts && (
+            <div className="pointer-events-auto mt-2">
+              <p className="text-[9px] text-white/40">Defender</p>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {(['none', 'gate', 'left', 'right'] as DefenderPost[]).map((post) => (
+                  <button
+                    key={post}
+                    type="button"
+                    onClick={() => {
+                      setMissionPosts({ defenderPost: post });
+                      SoundManager.play('click');
+                    }}
+                    className={`rounded border px-1.5 py-0.5 text-[9px] ${
+                      mission.defenderPost === post
+                        ? 'border-blue-400/60 bg-blue-500/20 text-blue-100'
+                        : 'border-white/15 text-white/50'
+                    }`}
+                  >
+                    {DEFENDER_POST_LABELS[post]}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           <p className="mt-1 text-[10px] text-white/40">{controlHints}</p>

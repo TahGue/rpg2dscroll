@@ -1,14 +1,19 @@
 import { useGameStore } from '@/store/gameStore';
 import {
   BLUEPRINT_LABELS,
+  BATTLE_POST_LABELS,
+  DEFENDER_POST_LABELS,
   GATE_GUARD,
   HEROES,
   applyDefenseSkillPrepBonus,
+  getDefenseLayout,
   getHero,
   getMissionById,
   getMissionPrepConfig,
   getRecruitedHeroes,
   isHeroRecruited,
+  type BattlePost,
+  type DefenderPost,
   type MissionLoadout,
 } from '@malik/shared';
 import { SoundManager } from '@/game/systems/SoundManager';
@@ -31,6 +36,9 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
       ? save.selectedHeroId
       : null;
   const gateGuard = save.prepUseGateGuard;
+  const heroPost = save.prepHeroPost;
+  const defenderPost = save.prepDefenderPost;
+  const isWide = Boolean(getDefenseLayout(missionId).wideBattlefield);
   const hero = selectedHeroId ? getHero(selectedHeroId) : null;
 
   if (!mission || !prepConfig) {
@@ -41,7 +49,9 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
     SoundManager.play('click');
     const loadout: MissionLoadout = {
       heroId: selectedHeroId,
-      gateGuard,
+      gateGuard: isWide ? defenderPost !== 'none' : gateGuard,
+      heroPost,
+      defenderPost: isWide ? defenderPost : gateGuard ? 'gate' : 'none',
     };
     confirmMissionPrep(missionId, loadout);
   };
@@ -137,16 +147,54 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
         </section>
 
         <section className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-          <h2 className="text-sm font-semibold text-desert-gold">NPC defender</h2>
-          <div className="mt-3">
-            <PrepToggle
-              title={GATE_GUARD.name}
-              subtitle="Hold the gate line"
-              detail={GATE_GUARD.description}
-              active={gateGuard}
-              onClick={toggleGuard}
-            />
-          </div>
+          <h2 className="text-sm font-semibold text-desert-gold">
+            {isWide ? 'Battlefield assignments' : 'NPC defender'}
+          </h2>
+          {isWide ? (
+            <div className="mt-3 space-y-4">
+              <PostPicker
+                label="Hero position"
+                options={(['gate', 'left', 'right'] as BattlePost[]).map((post) => ({
+                  id: post,
+                  label: BATTLE_POST_LABELS[post],
+                }))}
+                value={heroPost}
+                disabled={!selectedHeroId}
+                onSelect={(post) => {
+                  SoundManager.play('click');
+                  useGameStore.getState().updateSaveFields({ prepHeroPost: post as BattlePost });
+                }}
+              />
+              <PostPicker
+                label="Defender assignment"
+                options={(['none', 'gate', 'left', 'right'] as DefenderPost[]).map((post) => ({
+                  id: post,
+                  label: DEFENDER_POST_LABELS[post],
+                }))}
+                value={defenderPost}
+                onSelect={(post) => {
+                  SoundManager.play('click');
+                  useGameStore.getState().updateSaveFields({
+                    prepDefenderPost: post as DefenderPost,
+                    prepUseGateGuard: post !== 'none',
+                  });
+                }}
+              />
+              {!selectedHeroId && (
+                <p className="text-xs text-white/40">Assign a hero to choose their battlefield post.</p>
+              )}
+            </div>
+          ) : (
+            <div className="mt-3">
+              <PrepToggle
+                title={GATE_GUARD.name}
+                subtitle="Hold the gate line"
+                detail={GATE_GUARD.description}
+                active={gateGuard}
+                onClick={toggleGuard}
+              />
+            </div>
+          )}
         </section>
 
         {hero && (
@@ -179,6 +227,45 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
         <p className="mt-4 text-center text-xs text-white/40">
           Unlimited prep time — ring the war bell when ready (Y key).
         </p>
+      </div>
+    </div>
+  );
+}
+
+function PostPicker({
+  label,
+  options,
+  value,
+  disabled,
+  onSelect,
+}: {
+  label: string;
+  options: { id: string; label: string }[];
+  value: string;
+  disabled?: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div>
+      <p className="text-xs text-white/60">{label}</p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {options.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelect(option.id)}
+            className={`rounded border px-2 py-1 text-[10px] ${
+              disabled
+                ? 'cursor-not-allowed border-white/5 text-white/30'
+                : value === option.id
+                  ? 'border-desert-gold/60 bg-desert-gold/15 text-desert-gold'
+                  : 'border-white/15 text-white/60 hover:border-white/30'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   );

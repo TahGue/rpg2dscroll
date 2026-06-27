@@ -7,8 +7,11 @@ import {
   getDefenseRepairMultiplier,
   getHero,
   getLionGuardAnchorRatio,
+  getBattlePostAnchorRatio,
   type BuildUnlockContext,
   type DefenseLayout,
+  type BattlePost,
+  type DefenderPost,
 } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { persistSave } from '@/services/saveService';
@@ -339,6 +342,33 @@ export class MissionBridge {
 
   static isGateGuardActive(): boolean {
     return useGameStore.getState().mission.gateGuardActive;
+  }
+
+  static getHeroPost(): BattlePost {
+    return useGameStore.getState().mission.heroPost;
+  }
+
+  static getDefenderPost(): DefenderPost {
+    return useGameStore.getState().mission.defenderPost;
+  }
+
+  static getPostAnchorX(gateX: number, layout: DefenseLayout, post: BattlePost): number | undefined {
+    const wide = layout.wideBattlefield;
+    if (wide) return layout.worldWidth * getBattlePostAnchorRatio(post, wide);
+    if (post === 'gate') return gateX;
+    return undefined;
+  }
+
+  static getHeroAnchorX(gateX: number, layout: DefenseLayout): number | undefined {
+    if (!this.getActiveHeroId()) return undefined;
+    return this.getPostAnchorX(gateX, layout, this.getHeroPost());
+  }
+
+  static getDefenderAnchorX(gateX: number, layout: DefenseLayout): number | undefined {
+    const post = this.getDefenderPost();
+    if (post === 'none') return undefined;
+    if (layout.wideBattlefield) return this.getPostAnchorX(gateX, layout, post);
+    return gateX - 70;
   }
 
   static getBuildUnlockContext(): BuildUnlockContext {

@@ -50,6 +50,8 @@ import {
   type MissionLoadout,
   type BuildChoice,
   type LionMode,
+  type BattlePost,
+  type DefenderPost,
   type ResourceRewards,
   type OverworldPOI,
 } from '@malik/shared';
@@ -121,6 +123,8 @@ interface MissionRuntimeState {
   bossPhase: number;
   heroId: string | null;
   gateGuardActive: boolean;
+  heroPost: BattlePost;
+  defenderPost: DefenderPost;
   missionWood: number;
   missionIron: number;
   towersBuilt: number;
@@ -228,6 +232,7 @@ interface GameStore {
   setSelectedBuild: (build: BuildChoice) => void;
   cycleBuildInMission: () => void;
   setLionMode: (mode: LionMode) => void;
+  setMissionPosts: (posts: { heroPost?: BattlePost; defenderPost?: DefenderPost }) => void;
   startNGPlus: () => void;
   resetSave: () => void;
   togglePause: () => void;
@@ -308,6 +313,8 @@ const defaultMissionState = (): MissionRuntimeState => ({
   bossPhase: 0,
   heroId: null,
   gateGuardActive: false,
+  heroPost: 'gate',
+  defenderPost: 'none',
   missionWood: 0,
   missionIron: 0,
   towersBuilt: 0,
@@ -426,14 +433,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   confirmMissionPrep: (missionId, loadout) => {
     const save = get().save;
+    const defenderPost: DefenderPost =
+      loadout.defenderPost ??
+      (loadout.gateGuard === false ? 'none' : loadout.gateGuard ? 'gate' : save.prepDefenderPost);
+    const heroPost: BattlePost = loadout.heroPost ?? save.prepHeroPost;
     const updated = {
       ...save,
       selectedHeroId: loadout.heroId,
-      prepUseGateGuard: loadout.gateGuard,
+      prepUseGateGuard: defenderPost !== 'none',
+      prepHeroPost: heroPost,
+      prepDefenderPost: defenderPost,
     };
     persistSave(updated);
     set({ save: updated, prepMissionId: null });
-    get().startMission(missionId, get().missionReturnScreen, loadout);
+    get().startMission(missionId, get().missionReturnScreen, {
+      ...loadout,
+      heroPost,
+      defenderPost,
+    });
   },
 
   clearMapFocus: () => set({ mapFocusLocationId: null }),
@@ -607,7 +624,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const resolvedLoadout: MissionLoadout = loadout ?? {
       heroId: save.selectedHeroId,
       gateGuard: save.prepUseGateGuard,
+      heroPost: save.prepHeroPost,
+      defenderPost: save.prepDefenderPost,
     };
+    const defenderPost: DefenderPost =
+      resolvedLoadout.defenderPost ??
+      (resolvedLoadout.gateGuard === false
+        ? 'none'
+        : resolvedLoadout.gateGuard
+          ? 'gate'
+          : save.prepDefenderPost);
+    const heroPost: BattlePost = resolvedLoadout.heroPost ?? save.prepHeroPost;
     const overworldPatrolId = get().pendingOverworldPatrolId;
     if (overworldPatrolId) {
       set({ pendingOverworldPatrolId: null });
@@ -656,7 +683,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         maxTowerBuilds: prepConfig?.maxTowerBuilds ?? 99,
         maxTrapBuilds: prepConfig?.maxTrapBuilds ?? 99,
         heroId,
-        gateGuardActive: usePrep ? resolvedLoadout.gateGuard : false,
+        gateGuardActive: usePrep ? defenderPost !== 'none' : false,
+        heroPost: usePrep ? heroPost : 'gate',
+        defenderPost: usePrep ? defenderPost : 'none',
         usePrepBuildRules: usePrep,
         overworldPatrolId,
       },
@@ -1025,6 +1054,29 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const updated = { ...get().save, lionMode: mode };
     persistSave(updated);
     set({ save: updated });
+  },
+
+  setMissionPosts: (posts) => {
+    const { mission, save } = get();
+    if (!mission.usePrepBuildRules || mission.isAmbush) return;
+    const heroPost = posts.heroPost ?? mission.heroPost;
+    const defenderPost = posts.defenderPost ?? mission.defenderPost;
+    const updatedSave = {
+      ...save,
+      prepHeroPost: heroPost,
+      prepDefenderPost: defenderPost,
+      prepUseGateGuard: defenderPost !== 'none',
+    };
+    persistSave(updatedSave);
+    set({
+      save: updatedSave,
+      mission: {
+        ...mission,
+        heroPost,
+        defenderPost,
+        gateGuardActive: defenderPost !== 'none',
+      },
+    });
   },
 
   startNGPlus: () => {

@@ -16,6 +16,7 @@ import { IronTower } from '../entities/IronTower';
 import { LionDen } from '../entities/LionDen';
 import { Lion } from '../entities/Lion';
 import { GateGuard } from '../entities/GateGuard';
+import { HeroCompanion } from '../entities/HeroCompanion';
 import { WaveManager } from '../systems/WaveManager';
 import { WideBattlefieldManager } from '../systems/WideBattlefieldManager';
 import { MissionControlBridge } from '../systems/MissionControlBridge';
@@ -50,6 +51,7 @@ export class MissionScene extends Phaser.Scene {
   private repairStations: RepairStation[] = [];
   private lion: Lion | null = null;
   private gateGuard: GateGuard | null = null;
+  private heroCompanion: HeroCompanion | null = null;
   private heroAbilities: HeroAbilitySystem | null = null;
   private groundGroup!: Phaser.Physics.Arcade.StaticGroup;
   private enemies!: Phaser.GameObjects.Group;
@@ -169,9 +171,7 @@ export class MissionScene extends Phaser.Scene {
     }
     this.createPlayer();
     this.heroAbilities = new HeroAbilitySystem(this);
-    if (MissionBridge.isGateGuardActive() && this.gate) {
-      this.gateGuard = new GateGuard(this, this.gateX - 70, this.groundY);
-    }
+    this.syncBattleAllies();
     if (this.defenseLayout.hazards.length > 0) {
       this.hazardManager = new HazardManager(this, this.defenseLayout.hazards, this.worldWidth, this.groundY);
     }
@@ -246,6 +246,7 @@ export class MissionScene extends Phaser.Scene {
       enemyList.filter((e) => e.isAlive()),
       MissionBridge.getLionAnchorX(this.gateX, this.defenseLayout),
     );
+    this.syncBattleAllies();
     this.gateGuard?.update(this.time.now, enemyList);
     this.heroAbilities?.tickCooldownSync(MissionBridge.getActiveHeroId());
     this.hazardManager?.update(this.player, delta);
@@ -338,12 +339,56 @@ export class MissionScene extends Phaser.Scene {
       InputBridge.consumePulse('hero_ability')
     ) {
       const enemies = this.enemies.getChildren() as Enemy[];
+      const origin = this.getHeroAbilityOrigin();
       this.heroAbilities?.tryUseAbility(
-        this.player.x,
-        this.player.y,
-        this.player.getFacingDirection(),
+        origin.x,
+        origin.y,
+        origin.facing,
         enemies.filter((e) => e.isAlive()),
       );
+    }
+  }
+
+  private getHeroAbilityOrigin(): { x: number; y: number; facing: number } {
+    if (this.heroCompanion) {
+      const post = MissionBridge.getHeroPost();
+      const facing = post === 'left' ? 1 : post === 'right' ? -1 : this.player.getFacingDirection();
+      return { x: this.heroCompanion.x, y: this.heroCompanion.y, facing };
+    }
+    return {
+      x: this.player.x,
+      y: this.player.y,
+      facing: this.player.getFacingDirection(),
+    };
+  }
+
+  private syncBattleAllies(): void {
+    if (this.isAmbush || !this.gate) return;
+
+    const heroId = MissionBridge.getActiveHeroId();
+    const heroAnchor = MissionBridge.getHeroAnchorX(this.gateX, this.defenseLayout);
+    if (heroId && heroAnchor !== undefined) {
+      if (!this.heroCompanion) {
+        this.heroCompanion = new HeroCompanion(this, heroAnchor, this.groundY, heroId);
+      } else {
+        this.heroCompanion.setPosition(heroAnchor, this.groundY);
+      }
+    } else if (this.heroCompanion) {
+      this.heroCompanion.destroy();
+      this.heroCompanion = null;
+    }
+
+    const defenderPost = MissionBridge.getDefenderPost();
+    const defenderAnchor = MissionBridge.getDefenderAnchorX(this.gateX, this.defenseLayout);
+    if (defenderPost !== 'none' && defenderAnchor !== undefined) {
+      if (!this.gateGuard) {
+        this.gateGuard = new GateGuard(this, defenderAnchor, this.groundY);
+      } else {
+        this.gateGuard.setPosition(defenderAnchor, this.groundY);
+      }
+    } else if (this.gateGuard) {
+      this.gateGuard.destroy();
+      this.gateGuard = null;
     }
   }
 
