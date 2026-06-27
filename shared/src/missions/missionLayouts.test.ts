@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getDefenseLayout } from './missionLayouts';
+import { getBuildSocketRatios } from './wideBattlefield';
 
 describe('getDefenseLayout', () => {
   it('returns default layout for unknown missions', () => {
@@ -53,5 +54,20 @@ describe('getDefenseLayout', () => {
 
   it('adds bandit road prep phase', () => {
     expect(getDefenseLayout('mission-bandit-road').prepPhaseMs).toBe(1500);
+  });
+
+  it('centers gate and enables wide battlefield for Night Attack', () => {
+    const layout = getDefenseLayout('mission-night-attack');
+    expect(layout.worldWidth).toBeGreaterThanOrEqual(4000);
+    expect(layout.gateXRatio).toBe(0.5);
+    expect(layout.wideBattlefield?.leftSocketRatios.length).toBeGreaterThan(0);
+    expect(layout.wideBattlefield?.rightSocketRatios.length).toBeGreaterThan(0);
+    const sockets = getBuildSocketRatios(layout.wideBattlefield, layout);
+    expect(sockets.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('wide Silent Oasis and Scorpion Nest use centered gates', () => {
+    expect(getDefenseLayout('mission-silent-oasis').gateXRatio).toBe(0.5);
+    expect(getDefenseLayout('mission-scorpion-nest').wideBattlefield).toBeDefined();
   });
 });

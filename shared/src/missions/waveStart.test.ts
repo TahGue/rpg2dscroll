@@ -31,6 +31,6 @@ describe('getWaveStartHint', () => {
   it('describes unlimited prep before wave 1', () => {
     expect(
       getWaveStartHint({ currentWave: 0, totalWaves: 3, isAmbush: false, betweenWaves: false }),
-    ).toContain('start when ready');
+    ).toContain('war bell');
   });
 });

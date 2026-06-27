@@ -207,15 +207,15 @@ export const MISSIONS: MissionDefinition[] = [
         waveNumber: 1,
         timeBeforeWaveMs: 3000,
         rewardGold: 20,
-        enemies: [{ type: 'hyena', count: 5, spawnDelayMs: 800 }],
+        enemies: [{ type: 'hyena', count: 5, spawnDelayMs: 800, spawnSide: 'left' }],
       },
       {
         waveNumber: 2,
         timeBeforeWaveMs: 5000,
         rewardGold: 30,
         enemies: [
-          { type: 'hyena', count: 6, spawnDelayMs: 700 },
-          { type: 'sand_bandit', count: 2, spawnDelayMs: 1200 },
+          { type: 'hyena', count: 6, spawnDelayMs: 700, spawnSide: 'left' },
+          { type: 'sand_bandit', count: 2, spawnDelayMs: 1200, spawnSide: 'right' },
         ],
       },
       {
@@ -223,8 +223,9 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 50,
         enemies: [
-          { type: 'sand_bandit', count: 4, spawnDelayMs: 900 },
-          { type: 'bandit_leader', count: 1, spawnDelayMs: 2000 },
+          { type: 'sand_bandit', count: 3, spawnDelayMs: 900, spawnSide: 'left' },
+          { type: 'sand_bandit', count: 2, spawnDelayMs: 1000, spawnSide: 'right' },
+          { type: 'bandit_leader', count: 1, spawnDelayMs: 2000, spawnSide: 'right' },
         ],
       },
     ],
@@ -249,8 +250,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 3000,
         rewardGold: 30,
         enemies: [
-          { type: 'hyena', count: 4, spawnDelayMs: 600 },
-          { type: 'sand_bandit', count: 3, spawnDelayMs: 1000 },
+          { type: 'hyena', count: 4, spawnDelayMs: 600, spawnSide: 'left' },
+          { type: 'sand_bandit', count: 3, spawnDelayMs: 1000, spawnSide: 'left' },
         ],
       },
       {
@@ -258,8 +259,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 40,
         enemies: [
-          { type: 'sand_bandit', count: 4, spawnDelayMs: 800 },
-          { type: 'bandit_archer', count: 2, spawnDelayMs: 1200 },
+          { type: 'sand_bandit', count: 4, spawnDelayMs: 800, spawnSide: 'right' },
+          { type: 'bandit_archer', count: 2, spawnDelayMs: 1200, spawnSide: 'left' },
         ],
       },
       {
@@ -267,8 +268,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 80,
         enemies: [
-          { type: 'bandit_archer', count: 3, spawnDelayMs: 800 },
-          { type: 'scorpion_skitter', count: 3, spawnDelayMs: 600 },
+          { type: 'bandit_archer', count: 3, spawnDelayMs: 800, spawnSide: 'left' },
+          { type: 'scorpion_skitter', count: 4, spawnDelayMs: 600, spawnSide: 'right' },
         ],
       },
     ],
@@ -474,15 +475,15 @@ export const MISSIONS: MissionDefinition[] = [
         waveNumber: 1,
         timeBeforeWaveMs: 3000,
         rewardGold: 35,
-        enemies: [{ type: 'scorpion_skitter', count: 6, spawnDelayMs: 500 }],
+        enemies: [{ type: 'scorpion_skitter', count: 6, spawnDelayMs: 500, spawnSide: 'left' }],
       },
       {
         waveNumber: 2,
         timeBeforeWaveMs: 5000,
         rewardGold: 45,
         enemies: [
-          { type: 'scorpion_skitter', count: 4, spawnDelayMs: 600 },
-          { type: 'dune_scorpion', count: 1, spawnDelayMs: 2000 },
+          { type: 'scorpion_skitter', count: 4, spawnDelayMs: 600, spawnSide: 'right' },
+          { type: 'dune_scorpion', count: 1, spawnDelayMs: 2000, spawnSide: 'left' },
         ],
       },
       {
@@ -490,8 +491,8 @@ export const MISSIONS: MissionDefinition[] = [
         timeBeforeWaveMs: 5000,
         rewardGold: 55,
         enemies: [
-          { type: 'spitting_scorpion', count: 3, spawnDelayMs: 900 },
-          { type: 'scorpion_skitter', count: 4, spawnDelayMs: 700 },
+          { type: 'spitting_scorpion', count: 3, spawnDelayMs: 900, spawnSide: 'left' },
+          { type: 'scorpion_skitter', count: 4, spawnDelayMs: 700, spawnSide: 'right' },
         ],
       },
       {

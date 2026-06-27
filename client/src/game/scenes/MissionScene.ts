@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getMissionById, getDefenseLayout } from '@malik/shared';
+import { getMissionById, getDefenseLayout, getBuildSocketRatios } from '@malik/shared';
 import type { DefenseLayout } from '@malik/shared';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig';
 import { Player } from '../entities/Player';
@@ -17,6 +17,7 @@ import { LionDen } from '../entities/LionDen';
 import { Lion } from '../entities/Lion';
 import { GateGuard } from '../entities/GateGuard';
 import { WaveManager } from '../systems/WaveManager';
+import { WideBattlefieldManager } from '../systems/WideBattlefieldManager';
 import { MissionControlBridge } from '../systems/MissionControlBridge';
 import { HeroAbilitySystem } from '../systems/HeroAbilitySystem';
 import { HazardManager } from '../systems/HazardManager';
@@ -54,6 +55,7 @@ export class MissionScene extends Phaser.Scene {
   private enemies!: Phaser.GameObjects.Group;
   private waveManager!: WaveManager;
   private hazardManager: HazardManager | null = null;
+  private wideBattlefield: WideBattlefieldManager | null = null;
   private eclipseOverlay: EclipseOverlay | null = null;
   private defenseLayout!: DefenseLayout;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -67,6 +69,7 @@ export class MissionScene extends Phaser.Scene {
   private buildKey?: Phaser.Input.Keyboard.Key;
   private cycleBuildKey?: Phaser.Input.Keyboard.Key;
   private roarKey?: Phaser.Input.Keyboard.Key;
+  private interactKey?: Phaser.Input.Keyboard.Key;
 
   private worldWidth = 2400;
   private groundY = GAME_HEIGHT - 80;
@@ -91,8 +94,15 @@ export class MissionScene extends Phaser.Scene {
     this.defenseLayout = getDefenseLayout(missionId, mission?.type);
 
     this.worldWidth = this.defenseLayout.worldWidth;
-    this.spawnX = this.defenseLayout.spawnX;
-    this.gateX = this.worldWidth * this.defenseLayout.gateXRatio;
+    const wide = this.defenseLayout.wideBattlefield;
+    if (wide) {
+      this.spawnX = this.worldWidth * wide.leftSpawnXRatio;
+      this.rightSpawnX = this.worldWidth * wide.rightSpawnXRatio;
+      this.gateX = this.worldWidth * 0.5;
+    } else {
+      this.spawnX = this.defenseLayout.spawnX;
+      this.gateX = this.worldWidth * this.defenseLayout.gateXRatio;
+    }
     this.socketX = this.worldWidth * this.defenseLayout.socketXRatio;
 
     const biome = mission?.biome ?? getBiomeForMission(missionId);
@@ -137,7 +147,20 @@ export class MissionScene extends Phaser.Scene {
         this.eclipseOverlay = new EclipseOverlay(this, true, this.gateX, this.groundY, missionId);
       }
       if (this.defenseLayout.showCampBackground) this.showCampBackground();
-      if (this.defenseLayout.showZoneMarkers) this.showDefenseZones();
+      if (this.defenseLayout.wideBattlefield) {
+        this.wideBattlefield = new WideBattlefieldManager(
+          this,
+          this.defenseLayout.wideBattlefield,
+          this.worldWidth,
+          this.groundY,
+          (built) => this.handleBuiltStructure(built),
+          (barricade) => this.registerBarricade(barricade),
+          (tower) => this.towers.push(tower),
+        );
+        this.wideBattlefield.create();
+      } else if (this.defenseLayout.showZoneMarkers) {
+        this.showDefenseZones();
+      }
       if (this.isShrine) this.showShrineMarkers();
     } else {
       this.showAmbushMarker();
@@ -222,6 +245,7 @@ export class MissionScene extends Phaser.Scene {
     this.heroAbilities?.tickCooldownSync(MissionBridge.getActiveHeroId());
     this.hazardManager?.update(this.player, delta);
     this.eclipseOverlay?.update(this.player.x, delta);
+    this.wideBattlefield?.update(this.player, this.cameras.main);
     updateBiomeParallax(this, delta);
     this.handleInteractions(delta);
 
@@ -241,6 +265,10 @@ export class MissionScene extends Phaser.Scene {
   }
 
   private handleInteractions(delta: number): void {
+    if (this.interactKey && Phaser.Input.Keyboard.JustDown(this.interactKey) && this.wideBattlefield?.tryInteract()) {
+      return;
+    }
+
     if (!this.isAmbush && (this.gate || this.caravan)) {
       const repairable = this.caravan ?? this.gate!;
       const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, repairable.x, repairable.y);
@@ -327,10 +355,10 @@ export class MissionScene extends Phaser.Scene {
   }
 
   private createBuildSockets(): void {
-    const ratios = [
-      this.defenseLayout.socketXRatio,
-      ...(this.defenseLayout.extraSocketXRatios ?? []),
-    ];
+    const ratios = getBuildSocketRatios(this.defenseLayout.wideBattlefield, {
+      socketXRatio: this.defenseLayout.socketXRatio,
+      extraSocketXRatios: this.defenseLayout.extraSocketXRatios,
+    });
     this.buildSockets = ratios.map((ratio) => new BuildSocket(this, this.worldWidth * ratio, this.groundY));
   }
 
@@ -518,6 +546,7 @@ export class MissionScene extends Phaser.Scene {
     this.buildKey = bindKey(this, 'build');
     this.cycleBuildKey = bindKey(this, 'cycle_build');
     this.roarKey = bindKey(this, 'lion_roar');
+    this.interactKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
     const pauseKey = getKeyBindings().pause;
     this.input.keyboard.on(`keydown-${pauseKey}`, () => {
@@ -621,7 +650,7 @@ export class MissionScene extends Phaser.Scene {
       this.getDefenseTarget(),
       this.player,
       this.enemies,
-      this.isShrine ? this.rightSpawnX : undefined,
+      this.defenseLayout.wideBattlefield || this.isShrine ? this.rightSpawnX : undefined,
       this.isCaravan && this.caravan ? () => this.caravan!.x : undefined,
     );
     this.waveManager.start();
@@ -629,6 +658,18 @@ export class MissionScene extends Phaser.Scene {
   }
 
   private showCampBackground(): void {
+    const wide = this.defenseLayout.wideBattlefield;
+    if (wide) {
+      for (const ratio of [0.42, 0.58]) {
+        const campX = this.worldWidth * ratio;
+        for (let i = 0; i < 2; i++) {
+          const tent = this.add.image(campX + i * 45 - 20, this.groundY - 5, 'dune_mid');
+          tent.setOrigin(0.5, 1).setScale(0.32, 0.22).setTint(0x8b6914).setAlpha(0.65).setDepth(3);
+        }
+      }
+      return;
+    }
+
     const campX = this.gateX + 60;
     for (let i = 0; i < 3; i++) {
       const tent = this.add.image(campX + i * 55, this.groundY - 5, 'dune_mid');
@@ -751,9 +792,10 @@ export class MissionScene extends Phaser.Scene {
     const mission = getMissionById(missionId);
     const title = mission?.name ?? 'Defense Mission';
     const objective = mission?.objective ?? 'Protect the gate.';
+    const commander = this.defenseLayout.wideBattlefield?.commanderBrief;
 
     const banner = this.add
-      .text(GAME_WIDTH / 2, 70, title, {
+      .text(GAME_WIDTH / 2, commander ? 58 : 70, title, {
         fontSize: '28px',
         color: '#d4a843',
         fontFamily: 'Georgia, serif',
@@ -766,7 +808,7 @@ export class MissionScene extends Phaser.Scene {
       .setDepth(200);
 
     const objectiveText = this.add
-      .text(GAME_WIDTH / 2, 110, objective, {
+      .text(GAME_WIDTH / 2, commander ? 98 : 110, objective, {
         fontSize: '16px',
         color: '#ffffff',
         fontFamily: 'Georgia, serif',
@@ -780,12 +822,30 @@ export class MissionScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(200);
 
+    const commanderText = commander
+      ? this.add
+          .text(GAME_WIDTH / 2, 138, `"${commander}"`, {
+            fontSize: '13px',
+            color: '#ffcc88',
+            fontFamily: 'Georgia, serif',
+            fontStyle: 'italic',
+            stroke: '#1a1428',
+            strokeThickness: 2,
+            align: 'center',
+            wordWrap: { width: 640 },
+          })
+          .setOrigin(0.5)
+          .setScrollFactor(0)
+          .setAlpha(0)
+          .setDepth(200)
+      : null;
+
     this.tweens.add({
       targets: banner,
       alpha: 1,
       duration: 600,
       yoyo: true,
-      hold: 2000,
+      hold: commander ? 3500 : 2000,
       onComplete: () => banner.destroy(),
     });
 
@@ -794,9 +854,20 @@ export class MissionScene extends Phaser.Scene {
       alpha: 1,
       duration: 600,
       yoyo: true,
-      hold: 2000,
+      hold: commander ? 3500 : 2000,
       onComplete: () => objectiveText.destroy(),
     });
+
+    if (commanderText) {
+      this.tweens.add({
+        targets: commanderText,
+        alpha: 1,
+        duration: 600,
+        yoyo: true,
+        hold: 3500,
+        onComplete: () => commanderText.destroy(),
+      });
+    }
   }
 
   private triggerSunriseVictory(): void {

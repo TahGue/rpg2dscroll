@@ -18,7 +18,7 @@ export function getWaveStartLabel(ctx: WaveStartLabelContext): string {
 export function getWaveStartHint(ctx: WaveStartLabelContext): string {
   if (ctx.isAmbush) return 'Ambush — enemies approach!';
   if (ctx.currentWave === 0) {
-    return 'The enemy is coming. Explore routes, build, repair — start when ready.';
+    return 'Explore left and right from the gate — gather, repair, build — then ring the war bell.';
   }
-  return 'Rebuild and upgrade — sound the horn when ready for the next wave.';
+  return 'Walk the battlefield — repair and rebuild both flanks, then sound the horn for the next wave.';
 }

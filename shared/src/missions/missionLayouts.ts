@@ -1,4 +1,9 @@
 import type { MissionType } from '../types/mission';
+import type { WideBattlefieldConfig } from './wideBattlefield';
+import { NIGHT_ATTACK_WIDE, SCORPION_NEST_WIDE, SILENT_OASIS_WIDE } from './wideBattlefield';
+
+export type { WideBattlefieldConfig } from './wideBattlefield';
+export { getBuildSocketRatios, isWideBattlefield } from './wideBattlefield';
 
 export type HazardZoneType = 'soft_sand' | 'poison_pool' | 'oasis_heal' | 'wind_gust';
 
@@ -33,6 +38,8 @@ export interface DefenseLayout {
   eclipseDarkness?: boolean;
   /** Ms before wave 1 (prep/build phase). */
   prepPhaseMs?: number;
+  /** Center-gate wide battlefield with left/right exploration. */
+  wideBattlefield?: WideBattlefieldConfig;
 }
 
 const DEFAULT_LAYOUT: DefenseLayout = {
@@ -49,20 +56,22 @@ const DEFAULT_LAYOUT: DefenseLayout = {
 
 const MISSION_LAYOUTS: Record<string, Partial<DefenseLayout>> = {
   'mission-night-attack': {
-    worldWidth: 2200,
-    gateXRatio: 0.93,
-    socketXRatio: 0.5,
-    playerSpawnXRatio: 0.72,
+    worldWidth: 4000,
+    gateXRatio: 0.5,
+    socketXRatio: 0.36,
+    playerSpawnXRatio: 0.5,
     showCampBackground: true,
-    showZoneMarkers: true,
+    showZoneMarkers: false,
+    wideBattlefield: NIGHT_ATTACK_WIDE,
   },
   'mission-silent-oasis': {
-    worldWidth: 2600,
-    gateXRatio: 0.92,
-    socketXRatio: 0.48,
-    playerSpawnXRatio: 0.68,
-    showZoneMarkers: true,
-    hazards: [{ type: 'oasis_heal', xStartRatio: 0.78, xEndRatio: 1 }],
+    worldWidth: 4200,
+    gateXRatio: 0.5,
+    socketXRatio: 0.38,
+    playerSpawnXRatio: 0.5,
+    showZoneMarkers: false,
+    hazards: [{ type: 'oasis_heal', xStartRatio: 0.46, xEndRatio: 0.58 }],
+    wideBattlefield: SILENT_OASIS_WIDE,
   },
   'mission-red-dune-pass': {
     worldWidth: 2800,
@@ -131,17 +140,18 @@ const MISSION_LAYOUTS: Record<string, Partial<DefenseLayout>> = {
     prepPhaseMs: 8000,
   },
   'mission-scorpion-nest': {
-    worldWidth: 2700,
-    gateXRatio: 0.91,
-    socketXRatio: 0.46,
-    playerSpawnXRatio: 0.66,
-    showZoneMarkers: true,
+    worldWidth: 4400,
+    gateXRatio: 0.5,
+    socketXRatio: 0.4,
+    playerSpawnXRatio: 0.5,
+    showZoneMarkers: false,
     gateLabel: 'CAMP BARRICADE',
-    hazards: [{ type: 'poison_pool', xStartRatio: 0.55, xEndRatio: 0.68 }],
+    hazards: [{ type: 'poison_pool', xStartRatio: 0.12, xEndRatio: 0.22 }],
     poisonPoolsBetweenWaves: {
-      1: { xStartRatio: 0.22, xEndRatio: 0.38 },
-      2: { xStartRatio: 0.42, xEndRatio: 0.52 },
+      1: { xStartRatio: 0.72, xEndRatio: 0.82 },
+      2: { xStartRatio: 0.08, xEndRatio: 0.16 },
     },
+    wideBattlefield: SCORPION_NEST_WIDE,
   },
 };
 

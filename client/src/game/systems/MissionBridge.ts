@@ -304,6 +304,16 @@ export class MissionBridge {
     state.updateMissionRuntime({ missionIron: state.mission.missionIron + amount });
   }
 
+  static addMissionWood(amount: number): void {
+    const state = useGameStore.getState();
+    state.updateMissionRuntime({ missionWood: state.mission.missionWood + amount });
+  }
+
+  static addMissionIron(amount: number): void {
+    const state = useGameStore.getState();
+    state.updateMissionRuntime({ missionIron: state.mission.missionIron + amount });
+  }
+
   static recordBuildPlaced(buildId: string): void {
     const state = useGameStore.getState();
     if (buildId === 'arrow_tower' || buildId === 'iron_tower') {
