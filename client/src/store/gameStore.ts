@@ -30,6 +30,7 @@ import {
   cycleBuildChoice,
   isBuildUnlocked,
   getOverworldRegion,
+  getOverworldRegionIntro,
   canFastTravelTo,
   isPrepMission,
   getMissionPrepConfig,
@@ -192,6 +193,8 @@ interface GameStore {
   overworldCampOpen: boolean;
   overworldMapOpen: boolean;
   overworldUnlockToast: string | null;
+  /** First-visit region intro banner (region id). */
+  pendingRegionIntro: string | null;
   /** Live player position for minimap — updated from Phaser, avoids re-rendering full save every frame. */
   overworldLivePosition: { x: number; y: number };
   /** Where sub-screens (inventory, upgrades) return to. */
@@ -256,6 +259,7 @@ interface GameStore {
   toggleOverworldMap: () => void;
   fastTravelTo: (poiId: string, targetRegionId?: string) => boolean;
   travelToOverworldRegion: (targetRegionId: string, targetX: number, targetY: number) => void;
+  dismissRegionIntro: () => void;
 }
 
 const defaultMissionState = (): MissionRuntimeState => ({
@@ -359,6 +363,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   overworldCampOpen: false,
   overworldMapOpen: false,
   overworldUnlockToast: null,
+  pendingRegionIntro: null,
   overworldLivePosition: { x: 520, y: 1280 },
   mapHomeScreen: 'world_explore',
 
@@ -478,9 +483,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   fastTravelTo: (poiId, targetRegionId) => {
     const { save } = get();
     const regionId = targetRegionId ?? save.overworldPosition.regionId ?? 'nahran-outskirts';
+    const currentRegion = save.overworldPosition.regionId ?? 'nahran-outskirts';
     const region = getOverworldRegion(regionId);
     const poi = region.pois.find((p) => p.id === poiId);
     if (!poi || !canFastTravelTo(poi, save)) return false;
+
+    if (regionId !== currentRegion) {
+      get().travelToOverworldRegion(regionId, poi.x, poi.y);
+      set({ overworldCampOpen: false });
+      return true;
+    }
+
     const updated = {
       ...save,
       overworldPosition: { regionId, x: poi.x, y: poi.y },
@@ -497,9 +510,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   travelToOverworldRegion: (targetRegionId, targetX, targetY) => {
     const { save } = get();
     const region = getOverworldRegion(targetRegionId);
-    const visited = save.visitedOverworldRegions.includes(targetRegionId)
-      ? save.visitedOverworldRegions
-      : [...save.visitedOverworldRegions, targetRegionId];
+    const isFirstVisit = !save.visitedOverworldRegions.includes(targetRegionId);
+    const intro = getOverworldRegionIntro(targetRegionId);
+    const visited = isFirstVisit
+      ? [...save.visitedOverworldRegions, targetRegionId]
+      : save.visitedOverworldRegions;
 
     let unlockedMissions = save.unlockedMissions;
     if (targetRegionId === 'scorpion-valley' && save.completedMissions.includes('mission-silent-oasis')) {
@@ -527,10 +542,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       save: updated,
       overworldLivePosition: { x: targetX, y: targetY },
-      overworldUnlockToast: `Entered ${region.name}`,
+      pendingRegionIntro: isFirstVisit && intro ? targetRegionId : null,
+      overworldUnlockToast: isFirstVisit && intro ? null : `Entered ${region.name}`,
     });
-    window.setTimeout(() => set({ overworldUnlockToast: null }), 4500);
+    if (!(isFirstVisit && intro)) {
+      window.setTimeout(() => set({ overworldUnlockToast: null }), 4500);
+    }
   },
+
+  dismissRegionIntro: () => set({ pendingRegionIntro: null }),
 
   abortMission: () => {
     const { save, mission } = get();

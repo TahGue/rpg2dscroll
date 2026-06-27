@@ -7,6 +7,7 @@ import { OverworldInput } from '@/game/systems/OverworldInput';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { DialogSystem } from '@/ui/components/DialogSystem';
 import { ActBannerModal } from '@/ui/components/ActBannerModal';
+import { RegionIntroModal } from '@/ui/components/RegionIntroModal';
 import { OverworldMinimap } from '@/ui/overworld/OverworldMinimap';
 import { OverworldQuestTracker } from '@/ui/overworld/OverworldQuestTracker';
 import { OverworldTouchControls } from '@/ui/overworld/OverworldTouchControls';
@@ -24,6 +25,8 @@ export function WorldExploreView() {
   const checkInitialActBanner = useGameStore((s) => s.checkInitialActBanner);
   const pendingActBanner = useGameStore((s) => s.pendingActBanner);
   const dismissActBanner = useGameStore((s) => s.dismissActBanner);
+  const pendingRegionIntro = useGameStore((s) => s.pendingRegionIntro);
+  const dismissRegionIntro = useGameStore((s) => s.dismissRegionIntro);
   const pendingDialog = useGameStore((s) => s.pendingDialog);
   const dismissDialog = useGameStore((s) => s.dismissDialog);
   const interactPrompt = useGameStore((s) => s.overworldInteract.prompt);
@@ -52,7 +55,7 @@ export function WorldExploreView() {
   const regionName = getOverworldRegion(regionId).name;
 
   const overlayOpen = Boolean(
-    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingDialog || mapOpen || recruitOffer || eventChoice,
+    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingRegionIntro || pendingDialog || mapOpen || recruitOffer || eventChoice,
   );
 
   useEffect(() => {
@@ -266,6 +269,10 @@ export function WorldExploreView() {
       )}
 
       {pendingActBanner && <ActBannerModal actId={pendingActBanner} onDismiss={dismissActBanner} />}
+
+      {pendingRegionIntro && (
+        <RegionIntroModal regionId={pendingRegionIntro} onDismiss={dismissRegionIntro} />
+      )}
 
       {pendingDialog && <DialogSystem lines={pendingDialog.lines} onComplete={dismissDialog} />}
 

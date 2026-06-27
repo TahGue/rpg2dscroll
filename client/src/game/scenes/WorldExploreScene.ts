@@ -103,6 +103,7 @@ export class WorldExploreScene extends Phaser.Scene {
       || state.overworldDialog
       || state.overworldMissionOffer
       || state.pendingActBanner
+      || state.pendingRegionIntro
       || state.overworldMapOpen
       || state.overworldRecruitOffer
       || state.overworldEventChoice,
@@ -306,15 +307,15 @@ export class WorldExploreScene extends Phaser.Scene {
         OverworldBridge.openCampHub();
         break;
       case 'npc': {
+        const save = useGameStore.getState().save;
         if (poi.npcId === 'blacksmith') {
-          const recruited = useGameStore.getState().save.recruitedHeroes.includes('aisha');
+          const recruited = save.recruitedHeroes.includes('aisha');
           if (!recruited) {
             useGameStore.setState({ overworldRecruitOffer: { heroId: 'aisha' } });
             break;
           }
         }
         if (poi.npcId === 'water_keeper') {
-          const save = useGameStore.getState().save;
           if (
             !save.recruitedHeroes.includes('yusuf') &&
             save.completedMissions.includes('mission-night-attack')
@@ -324,14 +325,12 @@ export class WorldExploreScene extends Phaser.Scene {
           }
         }
         if (poi.npcId === 'hamza_trapper') {
-          const save = useGameStore.getState().save;
           if (!save.recruitedHeroes.includes('hamza')) {
             useGameStore.setState({ overworldRecruitOffer: { heroId: 'hamza' } });
             break;
           }
         }
         if (poi.npcId === 'sentinel_keeper') {
-          const save = useGameStore.getState().save;
           if (
             !save.recruitedHeroes.includes('salim') &&
             save.completedMissions.includes('mission-broken-watchtower')
@@ -340,7 +339,7 @@ export class WorldExploreScene extends Phaser.Scene {
             break;
           }
         }
-        const dialog = poi.npcId ? getOverworldNpcDialogue(poi.npcId) : undefined;
+        const dialog = poi.npcId ? getOverworldNpcDialogue(poi.npcId, save) : undefined;
         if (dialog) OverworldBridge.openNpcDialog(dialog.id, dialog.lines, dialog.name);
         break;
       }

@@ -45,3 +45,4 @@ export * from './overworld/blackEclipseRim';
 export * from './overworld/overworldLogic';
 export * from './overworld/overworldMapRoads';
 export * from './overworld/npcDialogues';
+export * from './overworld/regionIntros';
