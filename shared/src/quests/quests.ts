@@ -109,6 +109,10 @@ export function getQuest(id: string): QuestDefinition | undefined {
   return DEMO_QUESTS.find((q) => q.id === id);
 }
 
+export function getQuestsForObjective(objectiveId: string): QuestDefinition[] {
+  return DEMO_QUESTS.filter((quest) => quest.objectives.some((objective) => objective.id === objectiveId));
+}
+
 export function createQuestProgress(): QuestProgress {
   return { started: true, completed: false, objectives: {} };
 }

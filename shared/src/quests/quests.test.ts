@@ -6,6 +6,7 @@ import {
   createQuestProgress,
   getActiveQuestHint,
   getQuest,
+  getQuestsForObjective,
   isQuestComplete,
 } from './quests';
 
@@ -30,6 +31,11 @@ describe('Drying Well quests', () => {
     };
 
     expect(getActiveQuestHint(progress)).toContain('Defeat hyenas');
+  });
+
+  it('finds quests that should start when an objective is discovered early', () => {
+    expect(getQuestsForObjective('defeat_rashid').map((quest) => quest.id)).toEqual(['quest-bandit-camp']);
+    expect(getQuestsForObjective('hide').map((quest) => quest.id)).toEqual(['quest-hunters-lesson']);
   });
 
   it('defines the full demo quest list and Oasis Road completion unlock', () => {

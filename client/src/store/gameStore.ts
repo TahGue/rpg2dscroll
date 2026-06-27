@@ -41,6 +41,7 @@ import {
   DEMO_QUESTS,
   createQuestProgress,
   getQuest,
+  getQuestsForObjective,
   isQuestComplete,
   type GameSettings,
   type LocalSaveData,
@@ -456,6 +457,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const completedTitles: string[] = [];
     let changed = false;
     const quests: Record<string, QuestProgress> = { ...save.quests };
+
+    for (const quest of getQuestsForObjective(objectiveId)) {
+      if (!save.completedQuests.includes(quest.id) && !quests[quest.id]?.started) {
+        quests[quest.id] = createQuestProgress();
+        changed = true;
+      }
+    }
 
     for (const quest of DEMO_QUESTS) {
       const progress = quests[quest.id];
