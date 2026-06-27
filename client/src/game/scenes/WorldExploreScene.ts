@@ -18,6 +18,7 @@ import {
   type OverworldRegionTransition,
 } from '@malik/shared';
 import { OverworldPlayer } from '../entities/OverworldPlayer';
+import { OverworldEnemy } from '../entities/OverworldEnemy';
 import { OverworldPatrolSprite } from '../entities/OverworldPatrolSprite';
 import { OverworldBridge } from '../systems/OverworldBridge';
 import { OverworldInput } from '../systems/OverworldInput';
@@ -30,10 +31,11 @@ export class WorldExploreScene extends Phaser.Scene {
   private patrolGroup!: Phaser.Physics.Arcade.Group;
   private poiMarkers = new Map<string, Phaser.GameObjects.Container>();
   private patrolSprites = new Map<string, OverworldPatrolSprite>();
+  private enemies = new Map<string, OverworldEnemy>();
   private fogGraphics!: Phaser.GameObjects.Graphics;
   private nearestPoi: OverworldPOI | null = null;
   private nearestTransition: OverworldRegionTransition | null = null;
-  private regionId = 'nahran-outskirts';
+  private regionId = 'drying-well';
   private patrolTouchCooldown = new Map<string, number>();
   private transitionCooldownUntil = 0;
   private regionWidth = 2200;
@@ -44,7 +46,7 @@ export class WorldExploreScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.regionId = (this.registry.get('regionId') as string) ?? 'nahran-outskirts';
+    this.regionId = (this.registry.get('regionId') as string) ?? 'drying-well';
     const region = getOverworldRegion(this.regionId);
     this.regionWidth = region.width;
     this.regionHeight = region.height;
@@ -73,6 +75,7 @@ export class WorldExploreScene extends Phaser.Scene {
     this.patrolGroup = this.physics.add.group();
     this.refreshPatrols();
     this.refreshPOIMarkers();
+    this.refreshEnemies();
     this.rebuildFog();
 
     OverworldBridge.exploreCells(this.regionId, pos.x, pos.y);
@@ -144,6 +147,15 @@ export class WorldExploreScene extends Phaser.Scene {
       sprite.updatePatrol(time, delta);
     }
 
+    for (const enemy of this.enemies.values()) {
+      enemy.updateEnemy(time, this.player, (damage) => this.damagePlayer(damage));
+    }
+
+    if (!this.isMovementBlocked()) {
+      if (OverworldInput.consumeAttack()) this.handlePlayerMeleeAttack();
+      if (OverworldInput.consumeBow()) this.handlePlayerBowAttack();
+    }
+
     this.checkPatrolTouches(time);
     this.checkRegionTransitions(time);
     this.updateNearestPOI();
@@ -156,6 +168,7 @@ export class WorldExploreScene extends Phaser.Scene {
   private onOverworldRefresh(): void {
     this.refreshPOIMarkers();
     this.refreshPatrols();
+    this.refreshEnemies();
     this.rebuildFog();
     const region = getOverworldRegion(this.regionId);
     const save = useGameStore.getState().save;
@@ -384,10 +397,18 @@ export class WorldExploreScene extends Phaser.Scene {
         this.handleAdventureRewardPOI(poi, 'Hunted game', false);
         break;
       case 'combat':
-        this.handleAdventureCombat(poi);
+        OverworldBridge.openNpcDialog(
+          poi.id,
+          ['Draw close and fight in the open world.', 'Press J for sword or spear attacks. Press O to loose an arrow if you have a bow and arrows.'],
+          poi.label,
+        );
         break;
       case 'boss':
-        this.handleAdventureCombat(poi);
+        OverworldBridge.openNpcDialog(
+          poi.id,
+          ['Bandit Captain Rashid is here.', 'Bring a spear or bow, watch Malik\'s health, and attack him directly in the top-down world.'],
+          poi.label,
+        );
         break;
       case 'event':
         if (poi.id.startsWith('poi-') && (poi.objectiveId || poi.itemRewards)) {
@@ -456,10 +477,11 @@ export class WorldExploreScene extends Phaser.Scene {
       gold: poi.goldReward ?? 0,
       xp: Object.keys(rewards).length > 0 ? 12 : 6,
       objectiveId: poi.objectiveId,
-      objectiveAmount: poi.objectiveId ? (rewards[poi.objectiveId] ?? 1) : 1,
+      objectiveAmount: poi.objectiveAmount ?? (poi.objectiveId ? (rewards[poi.objectiveId] ?? 1) : 1),
     });
 
     for (const [itemId, qty] of Object.entries(rewards)) {
+      if (itemId === poi.objectiveId) continue;
       state.advanceQuestObjective(itemId, qty);
     }
 
@@ -478,57 +500,112 @@ export class WorldExploreScene extends Phaser.Scene {
       .join(' · ');
     this.showFloatText(completedTitles[0] ? `Quest complete: ${completedTitles[0]}` : rewardText || label);
     this.refreshPOIMarkers();
+    this.refreshEnemies();
   }
 
-  private handleAdventureCombat(poi: OverworldPOI): void {
+  private refreshEnemies(): void {
+    const save = useGameStore.getState().save;
+    const region = getOverworldRegion(this.regionId);
+    const combatPois = getActiveOverworldPOIs(region, save)
+      .filter((poi) => (poi.kind === 'combat' || poi.kind === 'boss') && !save.completedOverworldEvents.includes(poi.id));
+
+    for (const [id, enemy] of this.enemies) {
+      if (!combatPois.some((poi) => poi.id === id)) {
+        enemy.destroy();
+        this.enemies.delete(id);
+      }
+    }
+
+    for (const poi of combatPois) {
+      if (this.enemies.has(poi.id)) continue;
+      this.enemies.set(poi.id, new OverworldEnemy(this, poi));
+    }
+  }
+
+  private findNearestEnemy(maxDistance: number): OverworldEnemy | null {
+    let nearest: OverworldEnemy | null = null;
+    let nearestDist = Infinity;
+    for (const enemy of this.enemies.values()) {
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+      if (dist <= maxDistance && dist < nearestDist) {
+        nearest = enemy;
+        nearestDist = dist;
+      }
+    }
+    return nearest;
+  }
+
+  private handlePlayerMeleeAttack(): void {
+    const save = useGameStore.getState().save;
+    const hasSpear = (save.inventory.simple_spear ?? 0) > 0;
+    const range = hasSpear ? 86 : 58;
+    const enemy = this.findNearestEnemy(range);
+    const arc = this.add.circle(this.player.x, this.player.y, range, 0xffffff, 0.08).setDepth(25);
+    this.tweens.add({ targets: arc, alpha: 0, scale: 1.25, duration: 140, onComplete: () => arc.destroy() });
+    if (!enemy) return;
+
+    const damage = save.playerStats.attack + (hasSpear ? 10 : 0);
+    if (enemy.takeHit(damage, new Phaser.Math.Vector2(this.player.x, this.player.y))) {
+      this.defeatEnemy(enemy);
+    }
+  }
+
+  private handlePlayerBowAttack(): void {
     const state = useGameStore.getState();
     const save = state.save;
-    if (save.completedOverworldEvents.includes(poi.id)) {
-      this.showFloatText('Area cleared');
+    if ((save.inventory.bow ?? 0) <= 0 || (save.inventory.arrows ?? 0) <= 0) {
+      this.showFloatText('Need bow and arrows');
       return;
     }
 
-    const hasRangedOption = (save.inventory.bow ?? 0) > 0 && (save.inventory.arrows ?? 0) > 0;
-    const hasSpear = (save.inventory.simple_spear ?? 0) > 0;
-    if (poi.kind === 'boss' && !hasSpear && !hasRangedOption) {
-      OverworldBridge.openNpcDialog(
-        poi.id,
-        ['Rashid is too well armored for Malik\'s starting sword.', 'Craft a spear or bring a bow with arrows before challenging him.'],
-        poi.label,
-      );
+    const enemy = this.findNearestEnemy(260);
+    if (!enemy) {
+      this.showFloatText('No target');
       return;
-    }
-
-    const enemyHp = poi.enemyHp ?? 40;
-    const playerPower = save.playerStats.attack + (hasSpear ? 8 : 0) + (hasRangedOption ? 6 : 0);
-    const rounds = Math.max(1, Math.ceil(enemyHp / playerPower));
-    const danger = poi.kind === 'boss' ? 18 : poi.enemyType === 'bandit' ? 12 : 8;
-    const damageTaken = Math.max(4, rounds * danger - save.playerStats.defense);
-    if (save.playerStats.health <= damageTaken && (save.inventory.healing_potion ?? 0) <= 0) {
-      OverworldBridge.openNpcDialog(
-        poi.id,
-        ['Malik is too wounded to win this fight.', 'Rest at camp or craft a healing potion before engaging.'],
-        poi.label,
-      );
-      return;
-    }
-
-    const inventory = { ...save.inventory };
-    let health = save.playerStats.health - damageTaken;
-    if (health <= 0 && (inventory.healing_potion ?? 0) > 0) {
-      inventory.healing_potion -= 1;
-      health = Math.min(save.playerStats.maxHealth, 45);
-    }
-    if (hasRangedOption) {
-      inventory.arrows = Math.max(0, (inventory.arrows ?? 0) - rounds);
     }
 
     state.updateSaveFields({
-      inventory,
-      playerStats: { ...save.playerStats, health },
+      inventory: {
+        ...save.inventory,
+        arrows: Math.max(0, (save.inventory.arrows ?? 0) - 1),
+      },
     });
 
-    this.add.circle(poi.x, poi.y, poi.kind === 'boss' ? 46 : 34, 0xff5533, 0.3).setDepth(24);
+    const arrow = this.add.image(this.player.x, this.player.y, 'arrow').setDepth(26).setScale(0.8);
+    arrow.rotation = Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+    this.tweens.add({
+      targets: arrow,
+      x: enemy.x,
+      y: enemy.y,
+      duration: 160,
+      onComplete: () => {
+        arrow.destroy();
+        if (!this.enemies.has(enemy.poi.id)) return;
+        if (enemy.takeHit(save.playerStats.attack + 8, new Phaser.Math.Vector2(this.player.x, this.player.y))) {
+          this.defeatEnemy(enemy);
+        }
+      },
+    });
+  }
+
+  private damagePlayer(damage: number): void {
+    const state = useGameStore.getState();
+    const save = state.save;
+    const nextHealth = Math.max(1, save.playerStats.health - Math.max(1, damage - save.playerStats.defense));
+    state.updateSaveFields({
+      playerStats: {
+        ...save.playerStats,
+        health: nextHealth,
+      },
+    });
+    this.showFloatText(`-${save.playerStats.health - nextHealth} HP`);
+  }
+
+  private defeatEnemy(enemy: OverworldEnemy): void {
+    const poi = enemy.poi;
+    enemy.destroy();
+    this.enemies.delete(poi.id);
+    this.add.circle(poi.x, poi.y, poi.kind === 'boss' ? 52 : 36, 0xffd166, 0.22).setDepth(24);
     this.handleAdventureRewardPOI(poi, `${poi.label} defeated`, true);
   }
 

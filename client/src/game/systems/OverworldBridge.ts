@@ -1,7 +1,6 @@
 import type { OverworldPOI, OverworldPatrol } from '@malik/shared';
 import {
   getInitialExploredCells,
-  getMissionById,
   getNewExploredCellsNearPoint,
   getOverworldRegion,
 } from '@malik/shared';
@@ -106,25 +105,24 @@ export class OverworldBridge {
   }
 
   static offerMission(missionId: string, title: string, brief: string, returnX: number, returnY: number): void {
-    useGameStore.getState().setOverworldMissionOffer({
-      missionId,
-      title,
-      brief,
-      returnX,
-      returnY,
+    void missionId;
+    void brief;
+    void returnX;
+    void returnY;
+    useGameStore.getState().setOverworldDialog({
+      npcId: 'closed-defense-route',
+      name: title,
+      lines: ['That old defense route is closed. Malik now handles danger directly in the top-down desert.'],
     });
   }
 
   static offerPatrolAmbush(patrol: OverworldPatrol, returnX: number, returnY: number): void {
-    if (useGameStore.getState().overworldMissionOffer) return;
-    const mission = getMissionById(patrol.missionId);
-    useGameStore.getState().setOverworldMissionOffer({
-      missionId: patrol.missionId,
-      title: patrol.label,
-      brief: patrol.ambushBrief ?? mission?.storyBrief ?? mission?.objective ?? 'Ambush!',
-      returnX,
-      returnY,
-      patrolId: patrol.id,
+    void returnX;
+    void returnY;
+    useGameStore.getState().setOverworldDialog({
+      npcId: patrol.id,
+      name: patrol.label,
+      lines: [patrol.ambushBrief ?? 'Ambush!', 'Fight threats directly in the top-down adventure world.'],
     });
   }
 

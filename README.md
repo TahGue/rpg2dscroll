@@ -44,6 +44,8 @@ Rebind keys in **Settings → Controls** (Escape cancels listening). Defaults:
 |-----|--------|
 | WASD / Arrows | Move |
 | E | Interact with NPCs, resources, fishing spots, hunt trails, combat zones, and camp |
+| J / Space | Sword or spear attack |
+| O | Bow shot, if Malik has a bow and arrows |
 | M | Open the desert region map |
 
 Touch controls are available on mobile.

@@ -157,7 +157,7 @@ export function SettingsScreen() {
         <div>
           <p className="mb-3 text-sm font-semibold text-desert-gold">Controls</p>
           <p className="mb-3 text-xs text-white/40">
-            Arrow keys still work for movement. Space also jumps unless bound elsewhere. Rebinds apply on the next mission. Press Escape to cancel.
+            Arrow keys still work for movement. Space can be used for adventure attacks. Press Escape to cancel rebinding.
           </p>
           {bindError && <p className="mb-2 text-xs text-red-400">{bindError}</p>}
           <div className="space-y-2">

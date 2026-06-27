@@ -29,6 +29,8 @@ export const INVENTORY_ITEMS: InventoryItemDefinition[] = [
   { id: 'desert_mint', name: 'Desert Mint', description: 'Cooling herb for potions and tea.', category: 'material', sellValue: 3 },
   { id: 'water_flask', name: 'Water Flask', description: 'Clean water for recipes and quests.', category: 'material', sellValue: 2 },
   { id: 'rope', name: 'Rope', description: 'Used for tools, bows, and camp repairs.', category: 'material', sellValue: 3 },
+  { id: 'salt', name: 'Salt', description: 'Preserves fish and meat for travel.', category: 'material', sellValue: 2 },
+  { id: 'thread', name: 'Thread', description: 'Used for gloves, clothing, and light repairs.', category: 'material', sellValue: 2 },
   { id: 'feather', name: 'Feather', description: 'Fletching material for arrows.', category: 'animal', sellValue: 2 },
   { id: 'hide', name: 'Hide', description: 'Animal hide for leather gear.', category: 'animal', sellValue: 5 },
   { id: 'raw_meat', name: 'Raw Meat', description: 'Can be cooked at camp.', category: 'animal', sellValue: 3 },

@@ -73,7 +73,7 @@ export function MainMenu() {
         </div>
 
         <p className="mt-12 text-xs text-white/40">
-          Explore: WASD move · E interact · Gather, craft, quest, and fight in the top-down world
+          Explore: WASD move · E interact · J attack · O bow · Gather, craft, quest, and fight
         </p>
         <p className="mt-1 text-[10px] text-white/30">Demo: Nahran Village → Palm Grove → Oasis Road → Bandit Camp → Small Cave</p>
       </div>

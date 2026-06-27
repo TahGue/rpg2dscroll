@@ -117,6 +117,7 @@ export interface LocalSaveData {
   quests: Record<string, QuestProgress>;
   completedQuests: string[];
   demoUnlocks: string[];
+  demoCompletionSeen: boolean;
   reputation: Record<string, number>;
   playerStats: {
     health: number;
@@ -207,6 +208,7 @@ export const DEFAULT_SAVE: LocalSaveData = {
   quests: {},
   completedQuests: [],
   demoUnlocks: [],
+  demoCompletionSeen: false,
   reputation: { nahran: 0 },
   playerStats: {
     health: 100,
@@ -284,6 +286,7 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     quests: parsed.quests ?? DEFAULT_SAVE.quests,
     completedQuests: parsed.completedQuests ?? DEFAULT_SAVE.completedQuests,
     demoUnlocks: parsed.demoUnlocks ?? DEFAULT_SAVE.demoUnlocks,
+    demoCompletionSeen: parsed.demoCompletionSeen ?? DEFAULT_SAVE.demoCompletionSeen,
     reputation: { ...DEFAULT_SAVE.reputation, ...parsed.reputation },
     playerStats: { ...DEFAULT_SAVE.playerStats, ...parsed.playerStats },
   };

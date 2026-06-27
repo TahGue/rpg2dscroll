@@ -8,7 +8,7 @@ export class PreloadScene extends Phaser.Scene {
   create(): void {
     this.createLoadingBar();
     this.createAllTextures();
-    const target = (this.registry.get('bootTarget') as string) ?? 'MissionScene';
+    const target = (this.registry.get('bootTarget') as string) ?? 'WorldExploreScene';
     this.time.delayedCall(400, () => this.scene.start(target));
   }
 

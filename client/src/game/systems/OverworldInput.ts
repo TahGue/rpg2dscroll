@@ -17,6 +17,8 @@ class OverworldInputImpl {
 
   private interactDown = false;
   private mapToggleDown = false;
+  private attackDown = false;
+  private bowDown = false;
   private attached = false;
 
   private onKeyDown = (event: KeyboardEvent): void => {
@@ -31,6 +33,14 @@ class OverworldInputImpl {
       this.mapToggleDown = true;
       event.preventDefault();
     }
+    if (event.key === 'j' || event.key === 'J' || event.key === ' ') {
+      this.attackDown = true;
+      event.preventDefault();
+    }
+    if (event.key === 'o' || event.key === 'O') {
+      this.bowDown = true;
+      event.preventDefault();
+    }
   };
 
   private onKeyUp = (event: KeyboardEvent): void => {
@@ -42,6 +52,8 @@ class OverworldInputImpl {
   private onBlur = (): void => {
     this.held = { up: false, down: false, left: false, right: false };
     this.interactDown = false;
+    this.attackDown = false;
+    this.bowDown = false;
   };
 
   private setHeldFromKey(key: string, down: boolean): boolean {
@@ -92,6 +104,18 @@ class OverworldInputImpl {
   consumeMapToggle(): boolean {
     if (!this.mapToggleDown) return false;
     this.mapToggleDown = false;
+    return true;
+  }
+
+  consumeAttack(): boolean {
+    if (!this.attackDown) return false;
+    this.attackDown = false;
+    return true;
+  }
+
+  consumeBow(): boolean {
+    if (!this.bowDown) return false;
+    this.bowDown = false;
     return true;
   }
 }

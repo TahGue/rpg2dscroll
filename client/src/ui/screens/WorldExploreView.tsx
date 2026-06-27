@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getUnseenActForMission, getAllFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent, getNgPlusRewardMultiplier } from '@malik/shared';
+import { getAllFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent, getNgPlusRewardMultiplier } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { WorldExploreManager } from '@/game/WorldExploreManager';
 import { OverworldBridge } from '@/game/systems/OverworldBridge';
@@ -19,6 +19,7 @@ export function WorldExploreView() {
 
   const save = useGameStore((s) => s.save);
   const setScreen = useGameStore((s) => s.setScreen);
+  const updateSaveFields = useGameStore((s) => s.updateSaveFields);
   const restAtCamp = useGameStore((s) => s.restAtCamp);
   const purchaseShopItem = useGameStore((s) => s.purchaseShopItem);
   const showCampIntroIfNeeded = useGameStore((s) => s.showCampIntroIfNeeded);
@@ -32,9 +33,6 @@ export function WorldExploreView() {
   const interactPrompt = useGameStore((s) => s.overworldInteract.prompt);
   const overworldDialog = useGameStore((s) => s.overworldDialog);
   const dismissOverworldDialog = useGameStore((s) => s.dismissOverworldDialog);
-  const missionOffer = useGameStore((s) => s.overworldMissionOffer);
-  const setOverworldMissionOffer = useGameStore((s) => s.setOverworldMissionOffer);
-  const acceptOverworldMission = useGameStore((s) => s.acceptOverworldMission);
   const campOpen = useGameStore((s) => s.overworldCampOpen);
   const setOverworldCampOpen = useGameStore((s) => s.setOverworldCampOpen);
   const unlockToast = useGameStore((s) => s.overworldUnlockToast);
@@ -51,11 +49,11 @@ export function WorldExploreView() {
   const dismissWorldEvent = useGameStore((s) => s.dismissWorldEvent);
 
   const [shopOpen, setShopOpen] = useState(false);
-  const regionId = save.overworldPosition.regionId || 'nahran-outskirts';
+  const regionId = save.overworldPosition.regionId || 'drying-well';
   const regionName = getOverworldRegion(regionId).name;
 
   const overlayOpen = Boolean(
-    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingRegionIntro || pendingDialog || mapOpen || recruitOffer || eventChoice,
+    campOpen || shopOpen || overworldDialog || pendingActBanner || pendingRegionIntro || pendingDialog || mapOpen || recruitOffer || eventChoice,
   );
 
   useEffect(() => {
@@ -163,7 +161,7 @@ export function WorldExploreView() {
 
         <div className="pointer-events-none absolute bottom-3 right-3 z-10 hidden rounded-lg bg-black/60 px-3 py-2 text-[10px] text-white/50 sm:block">
           <p>WASD / Arrows — move</p>
-          <p>E — interact · M — region map</p>
+          <p>E — interact · J — attack · O — bow · M — map</p>
         </div>
       </div>
 
@@ -212,28 +210,6 @@ export function WorldExploreView() {
         />
       )}
 
-      {missionOffer && (
-        <MissionOfferModal
-          title={missionOffer.title}
-          brief={missionOffer.brief}
-          onAccept={() => {
-            SoundManager.play('click');
-            const unseenAct = getUnseenActForMission(missionOffer.missionId, save.seenActs);
-            if (unseenAct) {
-              useGameStore.setState({
-                pendingActBanner: unseenAct,
-                pendingMissionId: missionOffer.missionId,
-                missionReturnScreen: 'world_explore',
-                overworldMissionOffer: null,
-              });
-              return;
-            }
-            acceptOverworldMission();
-          }}
-          onDecline={() => { SoundManager.play('click'); setOverworldMissionOffer(null); }}
-        />
-      )}
-
       {eventChoice && (() => {
         const event = getWorldEvent(eventChoice.eventId);
         if (!event) return null;
@@ -274,6 +250,15 @@ export function WorldExploreView() {
 
       {pendingDialog && <DialogSystem lines={pendingDialog.lines} onComplete={dismissDialog} />}
 
+      {save.campaignComplete && !save.demoCompletionSeen && !overlayOpen && (
+        <DemoCompletionModal
+          onClose={() => {
+            SoundManager.play('unlock');
+            updateSaveFields({ demoCompletionSeen: true });
+          }}
+        />
+      )}
+
       {unlockToast && (
         <div className="pointer-events-none absolute left-1/2 top-28 z-30 -translate-x-1/2 rounded-xl border border-teal-400/40 bg-teal-950/90 px-6 py-4 text-sm text-teal-100 shadow-xl">
           <p className="font-semibold text-teal-300">{unlockToast}</p>
@@ -293,44 +278,6 @@ function NavBtn({ label, onClick }: { label: string; onClick: () => void }) {
     >
       {label}
     </button>
-  );
-}
-
-function MissionOfferModal({
-  title,
-  brief,
-  onAccept,
-  onDecline,
-}: {
-  title: string;
-  brief: string;
-  onAccept: () => void;
-  onDecline: () => void;
-}) {
-  return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-red-400/40 bg-desert-night/95 p-8 text-white shadow-2xl">
-        <p className="mb-1 text-xs uppercase tracking-widest text-red-300">Defense mission</p>
-        <h3 className="font-display mb-3 text-2xl text-desert-gold">{title}</h3>
-        <p className="mb-6 text-sm leading-relaxed text-white/75">{brief}</p>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onDecline}
-            className="flex-1 rounded-lg border border-white/20 py-3 text-sm text-white/70 hover:bg-white/5"
-          >
-            Not yet
-          </button>
-          <button
-            type="button"
-            onClick={onAccept}
-            className="flex-1 rounded-lg bg-desert-gold py-3 text-sm font-semibold text-desert-night hover:bg-yellow-400"
-          >
-            Prepare defense
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -368,6 +315,27 @@ function WorldEventModal({
           className="mt-6 w-full rounded-lg border border-white/20 py-2 text-sm text-white/60 hover:bg-white/5"
         >
           Leave for now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DemoCompletionModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl border border-desert-gold/50 bg-desert-night/95 p-8 text-center text-white shadow-2xl">
+        <p className="mb-2 text-xs uppercase tracking-[0.3em] text-desert-gold/70">Demo Complete</p>
+        <h3 className="font-display mb-3 text-3xl text-desert-gold">Oasis Road Unlocked</h3>
+        <p className="mb-6 text-sm leading-relaxed text-white/70">
+          Malik recovered the stolen water tools, defeated Bandit Captain Rashid, and reopened the road beyond Nahran.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg bg-desert-gold px-6 py-3 text-sm font-semibold text-desert-night hover:bg-yellow-400"
+        >
+          Continue Exploring
         </button>
       </div>
     </div>
@@ -447,13 +415,17 @@ function CampOverlay({
   const travelPoints = getAllFastTravelDestinations(save);
   const rewardMult = getNgPlusRewardMultiplier(save.ngPlusLevel);
   const campTitle =
-    region.id === 'scorpion-valley'
+    region.id === 'drying-well'
+      ? 'Malik\'s Camp'
+      : region.id === 'scorpion-valley'
       ? 'Valley Camp'
       : region.id === 'black-eclipse-rim'
         ? 'Eclipse Outpost'
         : 'Nahran Camp';
   const campBlurb =
-    region.id === 'scorpion-valley'
+    region.id === 'drying-well'
+      ? 'A quiet fire, storage baskets, a workbench, and a cooking stone. Sleep here to save and recover before the oasis road.'
+      : region.id === 'scorpion-valley'
       ? 'Trappers and miners shelter in the canyon. Hamza keeps watch over the poison pools below.'
       : region.id === 'black-eclipse-rim'
         ? 'Sentinel scouts hold this ridge against the dark. The Black Eclipse Gate stands beyond.'
@@ -465,8 +437,8 @@ function CampOverlay({
         <h3 className="font-display mb-2 text-2xl text-desert-gold">{campTitle}</h3>
         <p className="mb-4 text-white/70">{campBlurb}</p>
         <div className="mb-6 space-y-1 rounded-lg bg-black/30 p-4 text-sm">
-          <p>Level {save.level} · {save.gold} gold · {save.water ?? 0} water</p>
-          <p className="text-white/50">Missions completed: {save.completedMissions.length}</p>
+          <p>Level {save.level} · {save.gold} gold · HP {save.playerStats.health}/{save.playerStats.maxHealth}</p>
+          <p className="text-white/50">Quests completed: {save.completedQuests.length} · Nahran reputation {save.reputation.nahran ?? 0}</p>
         </div>
 
         {travelPoints.length > 1 && (
@@ -491,10 +463,10 @@ function CampOverlay({
         )}
 
         <div className="mb-4 space-y-2">
-          <OverlayBtn onClick={onRest} disabled={save.restBonusActive} className="border-green-500/50 text-green-300">
-            {save.restBonusActive ? 'Rest bonus ready' : 'Rest (+10% HP next mission)'}
+          <OverlayBtn onClick={onRest} className="border-green-500/50 text-green-300">
+            Sleep / Save / Restore Health
           </OverlayBtn>
-          <OverlayBtn onClick={onShop} className="border-cyan-400/50 text-cyan-200">Merchant</OverlayBtn>
+          <OverlayBtn onClick={onShop} className="border-cyan-400/50 text-cyan-200">Open Vendor Stalls</OverlayBtn>
           <OverlayBtn onClick={onUpgrades}>Malik Upgrades</OverlayBtn>
           <OverlayBtn onClick={onCampUpgrades} className="border-amber-400/50 text-amber-200">Camp Upgrades</OverlayBtn>
           <OverlayBtn onClick={onRelics} className="border-purple-400/50 text-purple-200">Sentinel Relics</OverlayBtn>
@@ -563,7 +535,7 @@ function ShopOverlay({
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-cyan-400/40 bg-desert-night p-8 text-white">
-        <h3 className="font-display mb-2 text-2xl text-cyan-300">Camp Merchant</h3>
+        <h3 className="font-display mb-2 text-2xl text-cyan-300">Nahran Vendor Stalls</h3>
         <p className="mb-4 text-sm text-desert-gold">{save.gold} gold available</p>
         <div className="mb-6 max-h-64 space-y-3 overflow-y-auto">
           {SHOP_ITEMS.map((item) => {
@@ -574,6 +546,7 @@ function ShopOverlay({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-cyan-200">{item.name}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-desert-gold/60">{item.vendor}</p>
                     <p className="text-xs text-white/60">{item.description}</p>
                   </div>
                   <button

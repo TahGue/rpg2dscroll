@@ -48,7 +48,7 @@ export const CRAFT_RECIPES: CraftRecipe[] = [
     id: 'craft-leather-gloves',
     name: 'Leather Gloves',
     description: 'Basic gloves for gathering and hunting.',
-    inventoryCosts: { hide: 2 },
+    inventoryCosts: { hide: 2, thread: 1 },
     outputItemId: 'leather_gloves',
     outputQuantity: 1,
   },

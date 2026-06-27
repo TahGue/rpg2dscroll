@@ -39,6 +39,7 @@ export interface OverworldPOI {
   eventLoreId?: string;
   questId?: string;
   objectiveId?: string;
+  objectiveAmount?: number;
   itemRewards?: Record<string, number>;
   goldReward?: number;
   enemyType?: 'hyena' | 'scorpion' | 'bandit' | 'bandit_archer' | 'rashid';
