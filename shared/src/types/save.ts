@@ -3,6 +3,7 @@ import { syncMaterialsToInventory } from '../world/materials';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings } from '../input/keyBindings';
 import { isBattlePost, isDefenderPost, type BattlePost, type DefenderPost } from '../missions/battlePosts';
 import type { DefenderChoice } from '../defenders/defenders';
+import type { QuestProgress } from '../quests/quests';
 
 export type LionMode = 'follow' | 'guard' | 'guard_left' | 'guard_right' | 'aggressive';
 
@@ -112,6 +113,22 @@ export interface LocalSaveData {
   defenseSkills: Record<string, number>;
   /** Regions the player has entered at least once. */
   visitedOverworldRegions: string[];
+  /** Adventure RPG quest progress for the Drying Well demo. */
+  quests: Record<string, QuestProgress>;
+  completedQuests: string[];
+  demoUnlocks: string[];
+  reputation: Record<string, number>;
+  playerStats: {
+    health: number;
+    maxHealth: number;
+    stamina: number;
+    maxStamina: number;
+    attack: number;
+    defense: number;
+    speed: number;
+    craftingLevel: number;
+    survivalLevel: number;
+  };
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -122,7 +139,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 export const DEFAULT_SAVE: LocalSaveData = {
-  version: 3,
+  version: 4,
   gold: 0,
   water: 0,
   iron: 0,
@@ -155,14 +172,20 @@ export const DEFAULT_SAVE: LocalSaveData = {
   },
   campUpgrades: {},
   relicLevels: {},
-  inventory: {},
+  inventory: {
+    simple_sword: 1,
+    axe: 1,
+    pickaxe: 1,
+    fishing_rod: 1,
+    dates: 2,
+  },
   selectedBuild: 'arrow_tower',
   lionMode: 'guard',
   ngPlusLevel: 0,
   campaignComplete: false,
   settings: DEFAULT_SETTINGS,
   lastPlayedAt: new Date().toISOString(),
-  overworldPosition: { regionId: 'nahran-outskirts', x: 520, y: 1280 },
+  overworldPosition: { regionId: 'drying-well', x: 460, y: 1320 },
   visitedOverworldPOIs: [],
   openedOverworldChests: [],
   exploredOverworldCells: [],
@@ -180,7 +203,22 @@ export const DEFAULT_SAVE: LocalSaveData = {
     repair_speed: 0,
     cheaper_towers: 0,
   },
-  visitedOverworldRegions: ['nahran-outskirts'],
+  visitedOverworldRegions: ['drying-well'],
+  quests: {},
+  completedQuests: [],
+  demoUnlocks: [],
+  reputation: { nahran: 0 },
+  playerStats: {
+    health: 100,
+    maxHealth: 100,
+    stamina: 100,
+    maxStamina: 100,
+    attack: 10,
+    defense: 0,
+    speed: 1,
+    craftingLevel: 1,
+    survivalLevel: 1,
+  },
 };
 
 export const SAVE_KEY = 'malik-desert-defense-save';
@@ -218,8 +256,9 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     ngPlusLevel: parsed.ngPlusLevel ?? 0,
     campaignComplete: parsed.campaignComplete ?? false,
     seenCampDialog: parsed.seenCampDialog ?? false,
-    version: parsed.version ?? DEFAULT_SAVE.version,
-    overworldPosition: parsed.overworldPosition ?? DEFAULT_SAVE.overworldPosition,
+    version: DEFAULT_SAVE.version,
+    overworldPosition:
+      (parsed.version ?? 0) < 4 ? DEFAULT_SAVE.overworldPosition : parsed.overworldPosition ?? DEFAULT_SAVE.overworldPosition,
     visitedOverworldPOIs: parsed.visitedOverworldPOIs ?? [],
     openedOverworldChests: parsed.openedOverworldChests ?? [],
     exploredOverworldCells: parsed.exploredOverworldCells ?? [],
@@ -240,7 +279,13 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
         ? parsed.prepDefenderId
         : DEFAULT_SAVE.prepDefenderId,
     defenseSkills: { ...DEFAULT_SAVE.defenseSkills, ...parsed.defenseSkills },
-    visitedOverworldRegions: parsed.visitedOverworldRegions ?? DEFAULT_SAVE.visitedOverworldRegions,
+    visitedOverworldRegions:
+      (parsed.version ?? 0) < 4 ? DEFAULT_SAVE.visitedOverworldRegions : parsed.visitedOverworldRegions ?? DEFAULT_SAVE.visitedOverworldRegions,
+    quests: parsed.quests ?? DEFAULT_SAVE.quests,
+    completedQuests: parsed.completedQuests ?? DEFAULT_SAVE.completedQuests,
+    demoUnlocks: parsed.demoUnlocks ?? DEFAULT_SAVE.demoUnlocks,
+    reputation: { ...DEFAULT_SAVE.reputation, ...parsed.reputation },
+    playerStats: { ...DEFAULT_SAVE.playerStats, ...parsed.playerStats },
   };
   return {
     ...base,

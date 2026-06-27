@@ -126,9 +126,7 @@ export function WorldExploreView() {
       <div className="pointer-events-auto relative z-20 flex shrink-0 gap-2 overflow-x-auto border-b border-white/5 px-3 py-2 sm:px-6">
         <NavBtn label="Camp" onClick={() => { SoundManager.play('click'); setOverworldCampOpen(true); }} />
         <NavBtn label="Region map (M)" onClick={() => { SoundManager.play('click'); setOverworldMapOpen(true); }} />
-        <NavBtn label="Campaign chart" onClick={() => navigate('world_map')} />
         <NavBtn label="Inventory" onClick={() => navigate('inventory')} />
-        <NavBtn label="Defense Skills" onClick={() => navigate('defense_skills')} />
         <NavBtn label="Upgrades" onClick={() => navigate('upgrade')} />
         <NavBtn label="Lore" onClick={() => navigate('lore')} />
       </div>

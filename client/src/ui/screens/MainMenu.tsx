@@ -8,7 +8,7 @@ export function MainMenu() {
   const authEmail = useGameStore((s) => s.authEmail);
   const xpProgress = getXpProgress(save.xp, save.level);
 
-  const navigate = (screen: 'world_explore' | 'world_map' | 'upgrade' | 'camp_upgrades' | 'relic_upgrades' | 'inventory' | 'post_game' | 'settings' | 'login' | 'leaderboard' | 'achievements' | 'lore') => {
+  const navigate = (screen: 'world_explore' | 'upgrade' | 'camp_upgrades' | 'relic_upgrades' | 'inventory' | 'post_game' | 'settings' | 'login' | 'leaderboard' | 'achievements' | 'lore') => {
     SoundManager.play('click');
     setScreen(screen);
   };
@@ -23,7 +23,7 @@ export function MainMenu() {
       />
 
       <div className="relative z-10 text-center">
-        <p className="mb-2 text-sm uppercase tracking-[0.4em] text-desert-gold/80">Desert Defense RPG</p>
+        <p className="mb-2 text-sm uppercase tracking-[0.4em] text-desert-gold/80">Pixel-Art Adventure RPG</p>
         <h1 className="font-display mb-2 text-6xl font-bold text-desert-gold">Malik</h1>
         <p className="mb-6 text-lg text-white/70">Guardian of the Dunes</p>
 
@@ -56,7 +56,6 @@ export function MainMenu() {
 
         <div className="flex flex-col gap-3">
           <MenuButton onClick={() => navigate('world_explore')}>Begin Adventure</MenuButton>
-          <MenuButton onClick={() => navigate('world_map')} variant="secondary">Campaign Overview</MenuButton>
           <MenuButton onClick={() => navigate('upgrade')} variant="secondary">Upgrades</MenuButton>
           <MenuButton onClick={() => navigate('camp_upgrades')} variant="secondary">Camp Upgrades</MenuButton>
           <MenuButton onClick={() => navigate('relic_upgrades')} variant="secondary">Sentinel Relics</MenuButton>
@@ -74,9 +73,9 @@ export function MainMenu() {
         </div>
 
         <p className="mt-12 text-xs text-white/40">
-          Explore: WASD move · E interact · Side-scroll missions when you enter gates and oases
+          Explore: WASD move · E interact · Gather, craft, quest, and fight in the top-down world
         </p>
-        <p className="mt-1 text-[10px] text-white/30">Combat: A/D move · W jump · J attack · B build · R repair</p>
+        <p className="mt-1 text-[10px] text-white/30">Demo: Nahran Village → Palm Grove → Oasis Road → Bandit Camp → Small Cave</p>
       </div>
     </div>
   );

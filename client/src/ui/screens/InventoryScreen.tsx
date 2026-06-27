@@ -1,6 +1,5 @@
-import { INVENTORY_ITEMS, CRAFT_RECIPES, formatRecipeCost, getInventoryItem, getBuildDisplayOrder, getBuildDefinition, isBuildUnlocked, getBuildUnlockHint } from '@malik/shared';
+import { CRAFT_RECIPES, INVENTORY_ITEMS, formatRecipeCost, getInventoryItem } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
-import { LION_MODE_LABELS, type LionMode } from '@malik/shared';
 import { SoundManager } from '@/game/systems/SoundManager';
 
 export function InventoryScreen() {
@@ -8,8 +7,6 @@ export function InventoryScreen() {
   const save = useGameStore((s) => s.save);
   const useInventoryItem = useGameStore((s) => s.useInventoryItem);
   const craftItem = useGameStore((s) => s.craftItem);
-  const setSelectedBuild = useGameStore((s) => s.setSelectedBuild);
-  const setLionMode = useGameStore((s) => s.setLionMode);
 
   const canCraft = (recipe: (typeof CRAFT_RECIPES)[number]) => {
     if (
@@ -29,11 +26,7 @@ export function InventoryScreen() {
     return true;
   };
 
-  const buildCtx = {
-    completedMissions: save.completedMissions,
-    lionLevel: save.upgrades.lion_level ?? 0,
-    lionDenCampLevel: save.campUpgrades.lion_den ?? 0,
-  };
+  const shownCategories = ['weapon', 'tool', 'armor', 'food', 'potion', 'material', 'fish', 'animal', 'quest', 'relic'] as const;
 
   return (
     <div className="flex h-full flex-col bg-desert-night text-white">
@@ -41,40 +34,53 @@ export function InventoryScreen() {
         <button type="button" onClick={() => { SoundManager.play('click'); setScreen(useGameStore.getState().mapHomeScreen); }} className="text-white/60 hover:text-white">
           ← Back
         </button>
-        <h2 className="font-display text-2xl text-desert-gold">Inventory & Camp</h2>
+        <h2 className="font-display text-2xl text-desert-gold">Adventure Inventory</h2>
         <span className="text-sm text-white/60">
-          {save.iron} iron · {save.leather} leather · {save.wood} wood
+          HP {save.playerStats.health}/{save.playerStats.maxHealth} · {save.gold} gold
         </span>
       </header>
 
       <div className="grid flex-1 grid-cols-1 gap-6 overflow-auto p-8 lg:grid-cols-2">
         <section>
-          <h3 className="mb-3 font-semibold text-desert-gold">Consumables</h3>
-          <div className="space-y-3">
-            {INVENTORY_ITEMS.filter((i) => i.category === 'consumable').map((item) => {
-              const count = save.inventory[item.id] ?? 0;
+          <h3 className="mb-3 font-semibold text-desert-gold">Gear & Supplies</h3>
+          <div className="space-y-5">
+            {shownCategories.map((category) => {
+              const items = INVENTORY_ITEMS.filter((item) => item.category === category && (save.inventory[item.id] ?? 0) > 0);
+              if (items.length === 0) return null;
               return (
-                <div key={item.id} className="rounded-lg border border-white/10 bg-black/30 p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-xs text-white/50">{item.description}</p>
-                      <p className="mt-1 text-xs text-white/40">Owned: {count}</p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={count <= 0 || !!save.missionBoost}
-                      onClick={() => { if (useInventoryItem(item.id)) SoundManager.play('click'); }}
-                      className="rounded border border-desert-gold/50 px-3 py-1 text-sm text-desert-gold disabled:opacity-40"
-                    >
-                      Use
-                    </button>
+                <div key={category}>
+                  <p className="mb-2 text-xs uppercase tracking-widest text-white/40">{category.replace(/_/g, ' ')}</p>
+                  <div className="space-y-2">
+                    {items.map((item) => {
+                      const count = save.inventory[item.id] ?? 0;
+                      const usable = item.category === 'food' || item.category === 'potion';
+                      return (
+                        <div key={item.id} className="rounded-lg border border-white/10 bg-black/30 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-medium">{item.name} <span className="text-xs text-white/40">x{count}</span></p>
+                              <p className="text-xs text-white/50">{item.description}</p>
+                            </div>
+                            {usable && (
+                              <button
+                                type="button"
+                                disabled={count <= 0}
+                                onClick={() => { if (useInventoryItem(item.id)) SoundManager.play('click'); }}
+                                className="rounded border border-desert-gold/50 px-3 py-1 text-sm text-desert-gold disabled:opacity-40"
+                              >
+                                Use
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
-            {INVENTORY_ITEMS.filter((i) => i.category === 'consumable').every((i) => !(save.inventory[i.id] ?? 0)) && (
-              <p className="text-sm text-white/40">No consumables — craft, buy from merchants, or earn rewards.</p>
+            {INVENTORY_ITEMS.every((item) => (save.inventory[item.id] ?? 0) <= 0) && (
+              <p className="text-sm text-white/40">Gather, fish, hunt, and complete quests to fill Malik's pack.</p>
             )}
           </div>
 
@@ -114,60 +120,22 @@ export function InventoryScreen() {
 
         <section className="space-y-6">
           <div>
-            <h3 className="mb-3 font-semibold text-desert-gold">Build Choice</h3>
-            <div className="flex flex-wrap gap-2">
-              {getBuildDisplayOrder().map((buildId) => {
-                const def = getBuildDefinition(buildId);
-                const locked = !isBuildUnlocked(buildId, buildCtx);
-                const hint = getBuildUnlockHint(buildId);
-                return (
-                <button
-                  key={buildId}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => { if (!locked) { setSelectedBuild(buildId); SoundManager.play('click'); } }}
-                  className={`flex-1 rounded-lg border px-4 py-3 text-sm min-w-[7rem] ${
-                    save.selectedBuild === buildId
-                      ? 'border-desert-gold bg-desert-gold/20 text-desert-gold'
-                      : 'border-white/20 text-white/70'
-                  } ${locked ? 'opacity-40' : ''}`}
-                >
-                  {def?.name ?? buildId}
-                  {locked && hint && <span className="block text-[10px] text-white/40">{hint}</span>}
-                </button>
-              );})}
+            <h3 className="mb-3 font-semibold text-desert-gold">Malik</h3>
+            <div className="rounded-lg border border-white/10 bg-black/30 p-4 text-sm space-y-1">
+              <p>Health: {save.playerStats.health}/{save.playerStats.maxHealth}</p>
+              <p>Stamina: {save.playerStats.stamina}/{save.playerStats.maxStamina}</p>
+              <p>Attack: {save.playerStats.attack}</p>
+              <p>Defense: {save.playerStats.defense}</p>
+              <p>Crafting Lv.{save.playerStats.craftingLevel} · Survival Lv.{save.playerStats.survivalLevel}</p>
             </div>
           </div>
 
-          {(save.upgrades.lion_level ?? 0) >= 1 && (
-            <div>
-              <h3 className="mb-3 font-semibold text-desert-gold">Sahar — Lion Mode</h3>
-              <div className="flex flex-wrap gap-2">
-                {(['follow', 'guard', 'guard_left', 'guard_right', 'aggressive'] as LionMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => { setLionMode(mode); SoundManager.play('click'); }}
-                    className={`flex-1 rounded-lg border px-2 py-2 text-[10px] ${
-                      save.lionMode === mode
-                        ? 'border-desert-gold bg-desert-gold/20 text-desert-gold'
-                        : 'border-white/20 text-white/70'
-                    }`}
-                  >
-                    {LION_MODE_LABELS[mode]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div>
-            <h3 className="mb-3 font-semibold text-desert-gold">Materials</h3>
-            <div className="rounded-lg border border-white/10 bg-black/30 p-4 text-sm space-y-1">
-              <p>Iron: {save.iron} — gate workshop & war camp</p>
-              <p>Leather: {save.leather} — lion den & merchant tents</p>
-              <p>Wood: {save.wood} — palm timbers & camp construction</p>
-              <p>Water: {save.water}</p>
+            <h3 className="mb-3 font-semibold text-desert-gold">Demo Goals</h3>
+            <div className="rounded-lg border border-white/10 bg-black/30 p-4 text-sm space-y-2 text-white/65">
+              <p>Gather wood, herbs, water, fish, hide, stone, and iron ore.</p>
+              <p>Craft potions, arrows, spear, grilled fish, leather gloves, and torch.</p>
+              <p>Defeat hyenas, bandits, and Bandit Captain Rashid to unlock the Oasis Road.</p>
             </div>
           </div>
         </section>

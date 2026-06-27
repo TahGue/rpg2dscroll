@@ -4,6 +4,11 @@ export type OverworldPOIKind =
   | 'npc'
   | 'chest'
   | 'resource'
+  | 'gather'
+  | 'fishing'
+  | 'hunt'
+  | 'combat'
+  | 'boss'
   | 'cart'
   | 'locked_gate'
   | 'ambush'
@@ -32,6 +37,13 @@ export interface OverworldPOI {
   /** One-shot world event id. */
   eventId?: string;
   eventLoreId?: string;
+  questId?: string;
+  objectiveId?: string;
+  itemRewards?: Record<string, number>;
+  goldReward?: number;
+  enemyType?: 'hyena' | 'scorpion' | 'bandit' | 'bandit_archer' | 'rashid';
+  enemyHp?: number;
+  requiredItemId?: string;
 }
 
 export interface OverworldWall {

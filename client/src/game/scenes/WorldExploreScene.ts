@@ -8,7 +8,6 @@ import {
   isOverworldPOIUnlocked,
   isOverworldCellExplored,
   getOverworldNpcDialogue,
-  getMissionById,
   getRegionTransitionAtPoint,
   getRegionTransitionHint,
   isRegionTransitionUnlocked,
@@ -308,6 +307,9 @@ export class WorldExploreScene extends Phaser.Scene {
         break;
       case 'npc': {
         const save = useGameStore.getState().save;
+        if (poi.questId) {
+          useGameStore.getState().startQuest(poi.questId);
+        }
         if (poi.npcId === 'blacksmith') {
           const recruited = save.recruitedHeroes.includes('aisha');
           if (!recruited) {
@@ -340,22 +342,25 @@ export class WorldExploreScene extends Phaser.Scene {
           }
         }
         const dialog = poi.npcId ? getOverworldNpcDialogue(poi.npcId, save) : undefined;
-        if (dialog) OverworldBridge.openNpcDialog(dialog.id, dialog.lines, dialog.name);
+        if (dialog) {
+          OverworldBridge.openNpcDialog(dialog.id, dialog.lines, dialog.name);
+        } else {
+          OverworldBridge.openNpcDialog(
+            poi.npcId ?? poi.id,
+            this.getDemoNpcLines(poi),
+            poi.label,
+          );
+        }
         break;
       }
       case 'mission':
       case 'ambush':
       case 'locked_gate':
-        if (poi.missionId) {
-          const mission = getMissionById(poi.missionId);
-          OverworldBridge.offerMission(
-            poi.missionId,
-            mission?.name ?? poi.label,
-            mission?.storyBrief ?? mission?.objective ?? '',
-            this.player.x,
-            this.player.y,
-          );
-        }
+        OverworldBridge.openNpcDialog(
+          poi.id,
+          ['That old defense route is closed. Malik\'s journey continues in the open desert.'],
+          poi.label,
+        );
         break;
       case 'chest':
         if (OverworldBridge.grantChest(poi.id, poi.chestGold ?? 0, poi.chestIron ?? 0)) {
@@ -369,7 +374,26 @@ export class WorldExploreScene extends Phaser.Scene {
           SoundManager.play('gold');
         }
         break;
+      case 'gather':
+        this.handleAdventureRewardPOI(poi, 'Gathered supplies', true);
+        break;
+      case 'fishing':
+        this.handleAdventureRewardPOI(poi, 'Caught fish', false);
+        break;
+      case 'hunt':
+        this.handleAdventureRewardPOI(poi, 'Hunted game', false);
+        break;
+      case 'combat':
+        this.handleAdventureCombat(poi);
+        break;
+      case 'boss':
+        this.handleAdventureCombat(poi);
+        break;
       case 'event':
+        if (poi.id.startsWith('poi-') && (poi.objectiveId || poi.itemRewards)) {
+          this.handleAdventureRewardPOI(poi, poi.label, true);
+          break;
+        }
         if (poi.eventId === 'broken_caravan' || poi.eventId === 'sandstorm_gate' || poi.eventId === 'eclipse_omen') {
           if (!save.completedOverworldEvents.includes(poi.id)) {
             useGameStore.getState().openWorldEvent(poi.id, poi.eventId);
@@ -382,6 +406,130 @@ export class WorldExploreScene extends Phaser.Scene {
         }
         break;
     }
+  }
+
+  private getDemoNpcLines(poi: OverworldPOI): string[] {
+    if (poi.npcId === 'village_elder') {
+      return ['The well is failing, Malik.', 'Inspect it, gather herbs, and learn what has poisoned the road water.'];
+    }
+    if (poi.npcId === 'demo_blacksmith') {
+      return ['Stone first, iron after.', 'Bring ore from the ridge and I can teach you a spear fit for the desert road.'];
+    }
+    if (poi.npcId === 'demo_herbalist') {
+      return ['Herbs grow where the palms still hold shade.', 'Bring mint and healing leaves and we will brew medicine.'];
+    }
+    if (poi.npcId === 'demo_hunter') {
+      return ['Move quietly near the hare trail.', 'A good knife and patient feet feed a village longer than bravado.'];
+    }
+    if (poi.npcId === 'demo_fisherman') {
+      return ['The small oasis still gives fish.', 'Cast with patience and keep the first catch for the cooking fire.'];
+    }
+    if (poi.npcId === 'injured_guard') {
+      return ['Hyenas and bandits have broken the road.', 'Clear the road and find who stole the water tools.'];
+    }
+    if (poi.npcId === 'demo_merchant') {
+      return ['My shelves are light until the oasis road opens.', 'For now, gather, craft, and spend wisely.'];
+    }
+    return ['The desert is changing. Follow the water and help Nahran survive.'];
+  }
+
+  private handleAdventureRewardPOI(poi: OverworldPOI, label: string, oneShot: boolean): void {
+    const state = useGameStore.getState();
+    const save = state.save;
+    if (oneShot && save.completedOverworldEvents.includes(poi.id)) {
+      this.showFloatText('Already done');
+      return;
+    }
+
+    if (poi.requiredItemId && (save.inventory[poi.requiredItemId] ?? 0) <= 0) {
+      OverworldBridge.openNpcDialog(
+        poi.id,
+        [`You need ${poi.requiredItemId.replace(/_/g, ' ')} before exploring this spot.`],
+        poi.label,
+      );
+      return;
+    }
+
+    const rewards = poi.itemRewards ?? {};
+    const completedTitles = state.grantAdventureRewards({
+      inventory: rewards,
+      gold: poi.goldReward ?? 0,
+      xp: Object.keys(rewards).length > 0 ? 12 : 6,
+      objectiveId: poi.objectiveId,
+      objectiveAmount: poi.objectiveId ? (rewards[poi.objectiveId] ?? 1) : 1,
+    });
+
+    for (const [itemId, qty] of Object.entries(rewards)) {
+      state.advanceQuestObjective(itemId, qty);
+    }
+
+    if (oneShot) {
+      const latest = useGameStore.getState().save;
+      if (!latest.completedOverworldEvents.includes(poi.id)) {
+        useGameStore.getState().updateSaveFields({
+          completedOverworldEvents: [...latest.completedOverworldEvents, poi.id],
+        });
+      }
+    }
+
+    SoundManager.play('gold');
+    const rewardText = Object.entries(rewards)
+      .map(([itemId, qty]) => `+${qty} ${itemId.replace(/_/g, ' ')}`)
+      .join(' · ');
+    this.showFloatText(completedTitles[0] ? `Quest complete: ${completedTitles[0]}` : rewardText || label);
+    this.refreshPOIMarkers();
+  }
+
+  private handleAdventureCombat(poi: OverworldPOI): void {
+    const state = useGameStore.getState();
+    const save = state.save;
+    if (save.completedOverworldEvents.includes(poi.id)) {
+      this.showFloatText('Area cleared');
+      return;
+    }
+
+    const hasRangedOption = (save.inventory.bow ?? 0) > 0 && (save.inventory.arrows ?? 0) > 0;
+    const hasSpear = (save.inventory.simple_spear ?? 0) > 0;
+    if (poi.kind === 'boss' && !hasSpear && !hasRangedOption) {
+      OverworldBridge.openNpcDialog(
+        poi.id,
+        ['Rashid is too well armored for Malik\'s starting sword.', 'Craft a spear or bring a bow with arrows before challenging him.'],
+        poi.label,
+      );
+      return;
+    }
+
+    const enemyHp = poi.enemyHp ?? 40;
+    const playerPower = save.playerStats.attack + (hasSpear ? 8 : 0) + (hasRangedOption ? 6 : 0);
+    const rounds = Math.max(1, Math.ceil(enemyHp / playerPower));
+    const danger = poi.kind === 'boss' ? 18 : poi.enemyType === 'bandit' ? 12 : 8;
+    const damageTaken = Math.max(4, rounds * danger - save.playerStats.defense);
+    if (save.playerStats.health <= damageTaken && (save.inventory.healing_potion ?? 0) <= 0) {
+      OverworldBridge.openNpcDialog(
+        poi.id,
+        ['Malik is too wounded to win this fight.', 'Rest at camp or craft a healing potion before engaging.'],
+        poi.label,
+      );
+      return;
+    }
+
+    const inventory = { ...save.inventory };
+    let health = save.playerStats.health - damageTaken;
+    if (health <= 0 && (inventory.healing_potion ?? 0) > 0) {
+      inventory.healing_potion -= 1;
+      health = Math.min(save.playerStats.maxHealth, 45);
+    }
+    if (hasRangedOption) {
+      inventory.arrows = Math.max(0, (inventory.arrows ?? 0) - rounds);
+    }
+
+    state.updateSaveFields({
+      inventory,
+      playerStats: { ...save.playerStats, health },
+    });
+
+    this.add.circle(poi.x, poi.y, poi.kind === 'boss' ? 46 : 34, 0xff5533, 0.3).setDepth(24);
+    this.handleAdventureRewardPOI(poi, `${poi.label} defeated`, true);
   }
 
   private showFloatText(text: string): void {
@@ -428,6 +576,11 @@ export class WorldExploreScene extends Phaser.Scene {
     if (poi.kind === 'locked_gate') color = unlocked ? 0xffaa44 : 0x666666;
     if (poi.kind === 'chest' || poi.kind === 'cart') color = 0xaa88ff;
     if (poi.kind === 'event') color = 0x66ccaa;
+    if (poi.kind === 'gather') color = 0x66cc66;
+    if (poi.kind === 'fishing') color = 0x55aaff;
+    if (poi.kind === 'hunt') color = 0xccaa66;
+    if (poi.kind === 'combat') color = 0xff6644;
+    if (poi.kind === 'boss') color = 0xdd3355;
 
     const base = this.add.circle(0, 0, 18, color, visited ? 0.35 : 0.55);
     const ring = this.add.circle(0, 0, 24, color, 0).setStrokeStyle(2, color, 0.6);
@@ -444,8 +597,8 @@ export class WorldExploreScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add(label);
 
-    if (poi.kind === 'mission' && poi.missionId && !save.completedMissions.includes(poi.missionId)) {
-      const icon = this.add.text(0, 0, '⚔', { fontSize: '16px' }).setOrigin(0.5);
+    if ((poi.kind === 'combat' || poi.kind === 'boss') && !save.completedOverworldEvents.includes(poi.id)) {
+      const icon = this.add.text(0, 0, '!', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
       container.add(icon);
     }
 

@@ -1,12 +1,12 @@
-# Malik — Desert Defense RPG
+# Malik RPG Adventure — The Drying Well
 
-A 2D side-scrolling desert defense RPG web game. Play as Malik, an Arab desert warrior defending camps, gates, and caravans from enemy waves.
+A top-down pixel-art adventure RPG vertical slice. Play as Malik, explore Nahran Village and the oasis road, gather resources, craft survival gear, complete village quests, fight desert enemies, and defeat Bandit Captain Rashid to reopen the Oasis Road.
 
 ## Stack
 
 - **Client:** React, TypeScript, Vite, TailwindCSS, Zustand, Phaser 3
 - **Server:** Node.js, Express, Prisma, SQLite (local) / PostgreSQL (production)
-- **Shared:** Common types, mission data, enemy data, upgrade data
+- **Shared:** Common types, overworld data, quest data, inventory, crafting, and progression logic
 
 ## Getting Started
 
@@ -25,70 +25,47 @@ npm test             # shared progression tests
 npm run build        # client + server production build
 ```
 
-## World Map
+## Demo Loop
 
-The campaign uses a **node-based desert journey** (React + SVG):
+The current playable target is:
 
-- Click locations on the parchment map to read mission briefings
-- **Scroll to zoom**, **drag to pan**, or use the +/−/⌂ controls (mobile-friendly)
-- Locked / unlocked / completed / current objective states
-- Malik’s marker shows the next story mission
-- Side panel: objective, enemies, rewards, and **Start Mission**
-- Camp, shop, resource nodes, lore sites, and boss gates across 4 regions and 5 acts
+```text
+Nahran Village -> Palm Grove -> Small Oasis -> Hyena Road -> Bandit Camp -> Small Cave
+Explore -> Gather -> Craft -> Quest -> Fight -> Upgrade -> Unlock Oasis Road
+```
 
-## Mission Types
+The side-scroll defense mode is no longer player-facing. The game launches into the top-down adventure region and uses RPG quest, inventory, crafting, camp, shop, and encounter systems.
 
-| Type | Gameplay |
-|------|----------|
-| `gate_defense` | Hold the gate; build at sockets between waves |
-| `survive` | Hold until sunrise after clearing waves |
-| `oasis` | Defend the well; oasis heal zone near Malik |
-| `ambush` | No gate — Malik fights in the open (Bandit Road) |
-| `caravan` | Escort the caravan; build mid-route; reach exit after waves |
-| `shrine` | Dual-sided spawns; defend the sacred shrine |
-| `boss` | Clear waves then slay the boss to win |
-
-## Controls (Mission)
+## Controls
 
 Rebind keys in **Settings → Controls** (Escape cancels listening). Defaults:
 
 | Key | Action |
 |-----|--------|
-| A / D / ← / → | Move |
-| W / Space / ↑ | Jump |
-| J | Sword attack |
-| K | Block |
-| Shift | Dodge |
-| U | Shield Bash |
-| I | Sand Slash (unlock) |
-| O | Bow (unlock) |
-| H | Spear (unlock) |
-| T | War Cry (Sun Strike relic) |
-| G | Sentinel Shield (relic) |
-| R | Repair gate/well/caravan (near target) |
-| B | Build at socket (near socket) |
-| N | Cycle build type |
-| L | Lion roar (unlock lion) |
-| P | Pause |
+| WASD / Arrows | Move |
+| E | Interact with NPCs, resources, fishing spots, hunt trails, combat zones, and camp |
+| M | Open the desert region map |
 
 Touch controls are available on mobile.
 
-## Meta Progression
+## RPG Systems
 
-- **World map:** 10 missions across 5 acts, resource nodes, shop, camp, lore
-- **Upgrades:** Malik stats, gate, towers, lion, skills
-- **Camp upgrades:** Well, war camp, gate workshop, palm timbers (wood), lion den, merchant tents
-- **Relics:** Shrine-unlocked powers — block boost, war cry, sentinel shield, regen, boss ward
-- **Inventory & crafting:** Consumables from shop/missions/crafting; use at camp before missions
-- **New Game+:** After defeating the Shadow Emir — harder enemies, +10% rewards, mission map reset (keeps upgrades)
+- **Quest log:** Tracks The Drying Well, Road Trouble, Bandit Camp, Fisherman's First Catch, Herbalist Medicine, Hunter's Lesson, and Blacksmith's Ore.
+- **Gathering:** Palm wood, dry wood, herbs, mint, water flasks, stone, iron ore, fish, hides, meat, rope, feathers, and relic shards.
+- **Crafting:** Healing Potion, Arrows x10, Simple Spear, Grilled Fish, Leather Gloves, and Torch.
+- **Combat:** Top-down encounter zones for hyenas, bandits, and Bandit Captain Rashid. Gear and health matter before major fights.
+- **Camp:** Restores Malik's health/stamina and saves progress.
+- **Shops:** Merchant, Herbalist, Fisherman, Hunter, and Blacksmith-flavored goods through the shared vendor catalog.
 
-## Defense Systems
+## Demo Region
 
-- **Build sockets:** Arrow tower, spike trap, barricade, repair station, iron tower, lion den (unlock by progression)
-- **Prep phase:** Short build/repair window before wave 1
-- **Hazards:** Soft sand, wind gusts, poison pools, oasis heal, relic pulse
-- **Eclipse darkness:** Black Eclipse & Shadow Emir — stand near the gate for relic light
-- **Boss phases:** Shadow Emir summons wraiths, shadow-dashes, and enrages at half HP
+- Malik's Camp
+- Nahran Village
+- Palm Grove
+- Small Oasis
+- Hyena Road
+- Bandit Camp
+- Small Cave
 
 ## Save Data
 
@@ -99,8 +76,5 @@ Touch controls are available on mobile.
 
 ## Materials
 
-- **Gold** — upgrades and shop
-- **Water** — camp & relic upgrades
-- **Iron** — camp upgrades, crafting
-- **Leather** — camp upgrades, crafting
-- **Wood** — palm timbers camp upgrade (from wood grove node)
+- **Gold** — upgrades and shops
+- **Adventure items** — tracked as inventory stacks for weapons, tools, armor, food, potions, materials, quest items, fish, animal parts, and relics

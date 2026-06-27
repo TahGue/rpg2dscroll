@@ -32,17 +32,16 @@ import {
   getOverworldRegion,
   getOverworldRegionIntro,
   canFastTravelTo,
-  isPrepMission,
-  getMissionPrepConfig,
-  pickDefaultHeroForMission,
-  applyDefenseSkillPrepBonus,
   getWorldEvent,
-  getHero,
   getDefenseSkillCost,
   DEFENSE_SKILLS,
   getBuildUnlocksGrantedByMission,
   getBuildUnlockAnnouncement,
   getBlueprintUnlockMessage,
+  DEMO_QUESTS,
+  createQuestProgress,
+  getQuest,
+  isQuestComplete,
   type GameSettings,
   type LocalSaveData,
   type MissionType,
@@ -55,6 +54,7 @@ import {
   type DefenderChoice,
   type ResourceRewards,
   type OverworldPOI,
+  type QuestProgress,
 } from '@malik/shared';
 import { loadSave, persistSave, parseImportedSave } from '@/services/saveService';
 import { pushCloudSave, submitScore } from '@/services/apiService';
@@ -248,6 +248,16 @@ interface GameStore {
   purchaseShopItem: (itemId: string) => boolean;
   collectResource: (locationId: string) => ResourceRewards | null;
   craftItem: (recipeId: string) => boolean;
+  startQuest: (questId: string) => boolean;
+  advanceQuestObjective: (objectiveId: string, amount?: number) => string[];
+  completeQuest: (questId: string) => boolean;
+  grantAdventureRewards: (rewards: {
+    inventory?: Record<string, number>;
+    gold?: number;
+    xp?: number;
+    objectiveId?: string;
+    objectiveAmount?: number;
+  }) => string[];
   importSaveFromJson: (raw: string) => boolean;
   unlockLore: (loreId: string) => void;
   dismissActBanner: () => void;
@@ -335,20 +345,47 @@ function applyMetaAchievements(save: LocalSaveData): LocalSaveData {
   return { ...save, achievements: [...new Set([...save.achievements, ...newAchievements])] };
 }
 
-function gateMaxFromSave(save: LocalSaveData): number {
-  const level = save.upgrades.gate_hp ?? 1;
-  const camp = (save.campUpgrades.gate_workshop ?? 0) * 40;
-  const timber = (save.campUpgrades.palm_timbers ?? 0) * 25;
-  return 500 + (level - 1) * 50 + camp + timber;
-}
-
-function playerMaxFromSave(save: LocalSaveData): number {
-  const level = save.upgrades.malik_hp ?? 1;
-  return 100 + (level - 1) * 15 + Math.max(0, save.level - 1) * 5;
-}
-
 function shopDiscount(save: LocalSaveData): number {
   return (save.campUpgrades.merchant_tents ?? 0) * 0.1;
+}
+
+function addInventoryStacks(
+  inventory: LocalSaveData['inventory'],
+  rewards: Record<string, number> = {},
+): LocalSaveData['inventory'] {
+  const next = { ...inventory };
+  for (const [itemId, amount] of Object.entries(rewards)) {
+    next[itemId] = (next[itemId] ?? 0) + amount;
+  }
+  return next;
+}
+
+function applyCompletedQuestReward(save: LocalSaveData, questId: string): LocalSaveData {
+  const quest = getQuest(questId);
+  if (!quest || save.completedQuests.includes(questId)) return save;
+  const xpResult = applyXpGain(save.xp, save.level, 80);
+  const quests: Record<string, QuestProgress> = {
+    ...save.quests,
+    [questId]: {
+      ...(save.quests[questId] ?? createQuestProgress()),
+      completed: true,
+    },
+  };
+  return {
+    ...save,
+    gold: save.gold + quest.rewardGold,
+    xp: xpResult.xp,
+    level: xpResult.level,
+    inventory: addInventoryStacks(save.inventory, quest.rewardItems),
+    completedQuests: [...save.completedQuests, questId],
+    quests,
+    demoUnlocks: Array.from(new Set([...save.demoUnlocks, ...(quest.unlocks ?? [])])),
+    reputation: {
+      ...save.reputation,
+      nahran: (save.reputation.nahran ?? 0) + 5,
+    },
+    campaignComplete: questId === 'quest-bandit-camp' ? true : save.campaignComplete,
+  };
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -377,12 +414,106 @@ export const useGameStore = create<GameStore>((set, get) => ({
   overworldLivePosition: { x: 520, y: 1280 },
   mapHomeScreen: 'world_explore',
 
-  setScreen: (screen) => set({ screen }),
+  setScreen: (screen) => {
+    if (
+      screen === 'mission'
+      || screen === 'mission_prep'
+      || screen === 'mission_result'
+      || screen === 'defense_skills'
+      || screen === 'world_map'
+    ) {
+      set({ screen: 'world_explore' });
+      return;
+    }
+    set({ screen });
+  },
 
   updateSaveFields: (partial) => {
     const updated = { ...get().save, ...partial };
     persistSave(updated);
     set({ save: updated });
+  },
+
+  startQuest: (questId) => {
+    const quest = getQuest(questId);
+    if (!quest) return false;
+    const { save } = get();
+    if (save.completedQuests.includes(questId) || save.quests[questId]?.started) return false;
+    const updated = {
+      ...save,
+      quests: {
+        ...save.quests,
+        [questId]: createQuestProgress(),
+      },
+    };
+    persistSave(updated);
+    set({ save: updated, overworldUnlockToast: `Quest started: ${quest.title}` });
+    return true;
+  },
+
+  advanceQuestObjective: (objectiveId, amount = 1) => {
+    let save = get().save;
+    const completedTitles: string[] = [];
+    let changed = false;
+    const quests: Record<string, QuestProgress> = { ...save.quests };
+
+    for (const quest of DEMO_QUESTS) {
+      const progress = quests[quest.id];
+      if (!progress?.started || progress.completed || !quest.objectives.some((o) => o.id === objectiveId)) continue;
+      const objective = quest.objectives.find((o) => o.id === objectiveId);
+      if (!objective) continue;
+      const current = progress.objectives[objectiveId] ?? 0;
+      quests[quest.id] = {
+        ...progress,
+        objectives: {
+          ...progress.objectives,
+          [objectiveId]: Math.min(objective.target, current + amount),
+        },
+      };
+      changed = true;
+    }
+
+    if (!changed) return completedTitles;
+
+    save = { ...save, quests };
+    for (const quest of DEMO_QUESTS) {
+      if (save.completedQuests.includes(quest.id)) continue;
+      if (!isQuestComplete(quest, save.quests[quest.id])) continue;
+      completedTitles.push(quest.title);
+      save = applyCompletedQuestReward(save, quest.id);
+    }
+
+    persistSave(save);
+    set({
+      save,
+      overworldUnlockToast: completedTitles.length > 0
+        ? `Quest complete: ${completedTitles.join(', ')}`
+        : get().overworldUnlockToast,
+    });
+    return completedTitles;
+  },
+
+  completeQuest: (questId) => {
+    const save = applyCompletedQuestReward(get().save, questId);
+    if (save === get().save) return false;
+    persistSave(save);
+    set({ save, overworldUnlockToast: `Quest complete: ${getQuest(questId)?.title ?? questId}` });
+    return true;
+  },
+
+  grantAdventureRewards: ({ inventory, gold = 0, xp = 0, objectiveId, objectiveAmount = 1 }) => {
+    const { save } = get();
+    const xpResult = xp > 0 ? applyXpGain(save.xp, save.level, xp) : { xp: save.xp, level: save.level, levelsGained: 0 };
+    const updated = {
+      ...save,
+      gold: save.gold + gold,
+      xp: xpResult.xp,
+      level: xpResult.level,
+      inventory: addInventoryStacks(save.inventory, inventory),
+    };
+    persistSave(updated);
+    set({ save: updated });
+    return objectiveId ? get().advanceQuestObjective(objectiveId, objectiveAmount) : [];
   },
 
   recruitHero: (heroId) => {
@@ -410,28 +541,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   openMissionPrep: (missionId) => {
-    const save = get().save;
-    const defaultHero = pickDefaultHeroForMission(missionId, save.recruitedHeroes);
-    const updated =
-      defaultHero && save.selectedHeroId !== defaultHero
-        ? { ...save, selectedHeroId: defaultHero }
-        : save;
-    if (updated !== save) persistSave(updated);
-    set({
-      prepMissionId: missionId,
-      screen: 'mission_prep',
-      save: updated,
-      missionReturnScreen: get().missionReturnScreen,
-    });
+    void missionId;
+    set({ prepMissionId: null, overworldMissionOffer: null, screen: 'world_explore' });
   },
 
   queueMissionStart: (missionId, returnScreen) => {
+    void missionId;
     if (returnScreen) set({ missionReturnScreen: returnScreen });
-    if (isPrepMission(missionId)) {
-      get().openMissionPrep(missionId);
-      return;
-    }
-    get().startMission(missionId, returnScreen ?? get().missionReturnScreen);
+    set({ overworldMissionOffer: null, screen: 'world_explore' });
   },
 
   confirmMissionPrep: (missionId, loadout) => {
@@ -590,116 +707,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   startMission: (missionId, returnScreen, loadout) => {
-    const save = get().save;
-    const missionDef = getMissionById(missionId);
-    let playerMaxHp = playerMaxFromSave(save);
-    const gateMaxHp = gateMaxFromSave(save);
-    const prepBase = getMissionPrepConfig(missionId);
-
-    let updatedSave = save;
-    if (save.restBonusActive) {
-      playerMaxHp = Math.round(playerMaxHp * 1.1);
-      updatedSave = { ...updatedSave, restBonusActive: false };
-    }
-
-    const prepConfig = prepBase ? applyDefenseSkillPrepBonus(prepBase, updatedSave) : null;
-    const usePrep = Boolean(prepConfig);
-
-    const boost = updatedSave.missionBoost;
-    let damageMultiplier = 1 + (updatedSave.campUpgrades.war_camp ?? 0) * 0.05;
-    let repairMultiplier = 1;
-    if (boost === 'hp') {
-      playerMaxHp = Math.round(playerMaxHp * 1.25);
-    } else if (boost === 'damage') {
-      damageMultiplier *= 1.2;
-    } else if (boost === 'repair') {
-      repairMultiplier = 2;
-    }
-
-    if (boost) {
-      updatedSave = { ...updatedSave, missionBoost: null };
-      persistSave(updatedSave);
-    }
-
-    const isAmbush = missionDef?.type === 'ambush';
-    const isShrine = missionDef?.type === 'shrine';
-    const isCaravan = missionDef?.type === 'caravan';
-    const isSurvive = missionDef?.type === 'survive';
-    const isOasis = missionDef?.type === 'oasis';
-
-    const resolvedLoadout: MissionLoadout = loadout ?? {
-      heroId: save.selectedHeroId,
-      gateGuard: save.prepUseGateGuard,
-      heroPost: save.prepHeroPost,
-      defenderPost: save.prepDefenderPost,
-      defenderId: save.prepDefenderId,
-    };
-    const defenderPost: DefenderPost =
-      resolvedLoadout.defenderPost ??
-      (resolvedLoadout.gateGuard === false
-        ? 'none'
-        : resolvedLoadout.gateGuard
-          ? 'gate'
-          : save.prepDefenderPost);
-    const heroPost: BattlePost = resolvedLoadout.heroPost ?? save.prepHeroPost;
-    const defenderId: DefenderChoice = resolvedLoadout.defenderId ?? save.prepDefenderId;
-    const overworldPatrolId = get().pendingOverworldPatrolId;
-    if (overworldPatrolId) {
-      set({ pendingOverworldPatrolId: null });
-    }
-    const heroId =
-      resolvedLoadout.heroId && save.recruitedHeroes.includes(resolvedLoadout.heroId)
-        ? resolvedLoadout.heroId
-        : null;
-    const activeHero = heroId ? getHero(heroId) : undefined;
-    let resolvedGateMaxHp = isAmbush ? 0 : gateMaxHp;
-    if (!isAmbush && activeHero?.gateMaxHpMult) {
-      resolvedGateMaxHp = Math.round(resolvedGateMaxHp * activeHero.gateMaxHpMult);
-    }
-
-    set({
-      screen: 'mission',
-      missionReturnScreen: returnScreen ?? get().missionReturnScreen,
-      save: updatedSave,
-      mission: {
-        ...defaultMissionState(),
-        missionId,
-        totalWaves: missionDef?.waves.length ?? 0,
-        objective: missionDef?.objective ?? 'Protect the gate.',
-        sandSlashUnlocked: (updatedSave.upgrades.sand_slash ?? 0) >= 1,
-        bowUnlocked: (updatedSave.upgrades.bow_level ?? 0) >= 1,
-        spearUnlocked: (updatedSave.upgrades.spear_level ?? 0) >= 1,
-        warCryUnlocked: (updatedSave.relicLevels.sun_strike ?? 0) >= 1,
-        sentinelUnlocked: (updatedSave.relicLevels.sentinel_shield ?? 0) >= 1,
-        isAmbush,
-        isShrine,
-        isCaravan,
-        isSurvive,
-        isOasis,
-        surviveDurationMs: missionDef?.surviveDurationMs ?? 0,
-        missionType: missionDef?.type ?? 'gate_defense',
-        playerMaxHp,
-        playerHp: playerMaxHp,
-        gateMaxHp: resolvedGateMaxHp,
-        gateHp: resolvedGateMaxHp,
-        activeBoost: boost,
-        damageMultiplier,
-        repairMultiplier,
-        goldCollected: prepConfig?.startingGold ?? 0,
-        missionWood: prepConfig?.startingWood ?? 0,
-        missionIron: prepConfig?.startingIron ?? 0,
-        maxTowerBuilds: prepConfig?.maxTowerBuilds ?? 99,
-        maxTrapBuilds: prepConfig?.maxTrapBuilds ?? 99,
-        heroId,
-        gateGuardActive: usePrep ? defenderPost !== 'none' : false,
-        defenderId,
-        heroPost: usePrep ? heroPost : 'gate',
-        defenderPost: usePrep ? defenderPost : 'none',
-        usePrepBuildRules: usePrep,
-        overworldPatrolId,
-      },
-      lastMissionResult: null,
-    });
+    void missionId;
+    void returnScreen;
+    void loadout;
+    set({ overworldMissionOffer: null, prepMissionId: null, mission: defaultMissionState(), screen: 'world_explore' });
   },
 
   endMission: (result) => {
@@ -1013,20 +1024,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
   useInventoryItem: (itemId) => {
     const { save } = get();
     const count = save.inventory[itemId] ?? 0;
-    if (count <= 0 || save.missionBoost) return false;
+    if (count <= 0) return false;
 
-    const boostMap: Record<string, MissionBoostType> = {
-      dates: 'hp',
-      ointment: 'repair',
-      firestones: 'damage',
+    const healMap: Record<string, number> = {
+      dates: 10,
+      grilled_fish: 18,
+      healing_potion: 45,
     };
-    const boost = boostMap[itemId];
-    if (!boost) return false;
+    const staminaMap: Record<string, number> = {
+      dates: 8,
+      grilled_fish: 15,
+      stamina_drink: 40,
+    };
+    const heal = healMap[itemId] ?? 0;
+    const stamina = staminaMap[itemId] ?? 0;
+    if (heal <= 0 && stamina <= 0) return false;
 
     const updated = {
       ...save,
       inventory: { ...save.inventory, [itemId]: count - 1 },
-      missionBoost: boost,
+      playerStats: {
+        ...save.playerStats,
+        health: Math.min(save.playerStats.maxHealth, save.playerStats.health + heal),
+        stamina: Math.min(save.playerStats.maxStamina, save.playerStats.stamina + stamina),
+      },
     };
     persistSave(updated);
     set({ save: updated });
@@ -1165,7 +1186,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   restAtCamp: () => {
-    const updated = { ...get().save, restBonusActive: true };
+    const save = get().save;
+    const updated = {
+      ...save,
+      restBonusActive: false,
+      playerStats: {
+        ...save.playerStats,
+        health: save.playerStats.maxHealth,
+        stamina: save.playerStats.maxStamina,
+      },
+      lastPlayedAt: new Date().toISOString(),
+    };
     persistSave(updated);
     set({ save: updated });
   },
@@ -1279,6 +1310,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistSave(updated);
     if (get().authEmail) void pushCloudSave(updated).catch(() => {});
     set({ save: updated });
+    get().advanceQuestObjective(recipe.outputItemId, recipe.outputQuantity);
+    const objectiveMap: Record<string, string> = {
+      'craft-arrows': 'craft_arrows',
+      'craft-healing-potion': 'craft_healing_potion',
+      'craft-leather-gloves': 'craft_leather_gloves',
+    };
+    const objectiveId = objectiveMap[recipe.id];
+    if (objectiveId) get().advanceQuestObjective(objectiveId, recipe.outputQuantity);
     return true;
   },
 

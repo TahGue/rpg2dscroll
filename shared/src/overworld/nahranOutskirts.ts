@@ -235,13 +235,15 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
 
 import { SCORPION_VALLEY } from './scorpionValley';
 import { BLACK_ECLIPSE_RIM } from './blackEclipseRim';
+import { DRYING_WELL } from './dryingWell';
 
 export const OVERWORLD_REGIONS: Record<string, OverworldRegion> = {
+  'drying-well': DRYING_WELL,
   'nahran-outskirts': NAHRAN_OUTSKIRTS,
   'scorpion-valley': SCORPION_VALLEY,
   'black-eclipse-rim': BLACK_ECLIPSE_RIM,
 };
 
 export function getOverworldRegion(id: string): OverworldRegion {
-  return OVERWORLD_REGIONS[id] ?? NAHRAN_OUTSKIRTS;
+  return OVERWORLD_REGIONS[id] ?? DRYING_WELL;
 }

@@ -352,6 +352,16 @@ export function getOverworldPOIInteractHint(
       return save.collectedResources.includes(poi.resourceLocationId ?? poi.id)
         ? 'Depleted'
         : 'Gather supplies';
+    case 'gather':
+      return save.completedOverworldEvents.includes(poi.id) ? 'Gathered' : `Gather at ${poi.label}`;
+    case 'fishing':
+      return `Fish at ${poi.label}`;
+    case 'hunt':
+      return `Hunt at ${poi.label}`;
+    case 'combat':
+      return save.completedOverworldEvents.includes(poi.id) ? 'Area cleared' : `Fight: ${poi.label}`;
+    case 'boss':
+      return save.completedOverworldEvents.includes(poi.id) ? 'Boss defeated' : `Boss fight: ${poi.label}`;
     case 'ambush':
       return `Enter ${poi.label}`;
     case 'locked_gate':
