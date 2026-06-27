@@ -79,6 +79,36 @@ export const WORLD_EVENTS: Record<string, WorldEventDefinition> = {
       },
     ],
   },
+  eclipse_omen: {
+    id: 'eclipse_omen',
+    title: 'Eclipse Omen',
+    intro:
+      'The sun dims over the rim. Old sentinels carved warnings here — the Shadow Emir\'s host gathers beyond the gate.',
+    choices: [
+      {
+        id: 'read_stones',
+        label: 'Read the sentinel stones',
+        description: 'Decipher the First Sentinels\' warnings.',
+        gold: 15,
+        loreId: 'lore-black-eclipse',
+      },
+      {
+        id: 'gather_iron',
+        label: 'Salvage buried iron',
+        description: 'Pry ore from collapsed watch posts.',
+        gold: 10,
+        iron: 4,
+      },
+      {
+        id: 'bless_gate',
+        label: 'Bless the outpost gate',
+        description: 'Rites that strengthen the final defense.',
+        gold: 20,
+        wood: 3,
+        loreId: 'lore-first-sentinels',
+      },
+    ],
+  },
 };
 
 export function getWorldEvent(eventId: string): WorldEventDefinition | undefined {

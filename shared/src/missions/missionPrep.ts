@@ -4,6 +4,9 @@ export const PREP_MISSION_IDS = [
   'mission-night-attack',
   'mission-silent-oasis',
   'mission-scorpion-nest',
+  'mission-broken-watchtower',
+  'mission-shrine-sanctum',
+  'mission-black-eclipse',
 ] as const;
 
 export type PrepMissionId = (typeof PREP_MISSION_IDS)[number];
@@ -36,6 +39,27 @@ export const MISSION_PREP_CONFIGS: Record<PrepMissionId, MissionPrepConfig> = {
     startingWood: 6,
     startingIron: 8,
     maxTowerBuilds: 2,
+    maxTrapBuilds: 4,
+  },
+  'mission-broken-watchtower': {
+    startingGold: 180,
+    startingWood: 10,
+    startingIron: 12,
+    maxTowerBuilds: 3,
+    maxTrapBuilds: 3,
+  },
+  'mission-shrine-sanctum': {
+    startingGold: 200,
+    startingWood: 8,
+    startingIron: 6,
+    maxTowerBuilds: 2,
+    maxTrapBuilds: 4,
+  },
+  'mission-black-eclipse': {
+    startingGold: 250,
+    startingWood: 12,
+    startingIron: 15,
+    maxTowerBuilds: 3,
     maxTrapBuilds: 4,
   },
 };

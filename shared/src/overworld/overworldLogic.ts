@@ -102,6 +102,15 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-shrine-sanctum')) {
     return 'Enter the Shrine of the First Sentinels and claim a relic';
   }
+  if (!save.visitedOverworldRegions.includes('black-eclipse-rim')) {
+    return 'Cross east into the Black Eclipse Rim beyond the shrine';
+  }
+  if (!done.includes('mission-black-eclipse')) {
+    return 'Hold the Black Eclipse Gate against the iron vanguard';
+  }
+  if (!done.includes('mission-shadow-emir')) {
+    return 'Assault the Shadow Emir Fortress — the campaign finale';
+  }
   if (!done.includes('mission-red-dune-pass')) {
     return 'Optional: hold Red Dune Pass on the Nahran road';
   }
@@ -167,6 +176,9 @@ export function getRegionTransitionHint(
     if (transition.unlockAfterMission === 'mission-silent-oasis') {
       return 'Locked — save the Silent Oasis first';
     }
+    if (transition.unlockAfterMission === 'mission-shrine-sanctum') {
+      return 'Locked — claim a relic at the Sentinel Shrine first';
+    }
     return 'Path blocked — complete earlier defenses first';
   }
   return transition.label;
@@ -213,6 +225,7 @@ export function getOverworldPOIInteractHint(
   if (poi.kind === 'locked_gate' && poi.unlockAfterMission && !save.completedMissions.includes(poi.unlockAfterMission)) {
     if (poi.unlockAfterMission === 'mission-silent-oasis') return 'Locked — save the Silent Oasis first';
     if (poi.unlockAfterMission === 'mission-scorpion-nest') return 'Locked — clear the Scorpion Nest first';
+    if (poi.unlockAfterMission === 'mission-black-eclipse') return 'Locked — hold the Black Eclipse Gate first';
     return 'Locked — finish earlier defenses first';
   }
   switch (poi.kind) {
@@ -242,12 +255,16 @@ export function getOverworldPOIInteractHint(
           ? 'Wreck picked clean'
           : poi.eventId === 'sandstorm_gate'
             ? 'Storm tracks faded'
-            : 'Tracks faded into the sand'
+            : poi.eventId === 'eclipse_omen'
+              ? 'Omen stones stand silent'
+              : 'Tracks faded into the sand'
         : poi.eventId === 'broken_caravan'
           ? 'Investigate wreckage'
           : poi.eventId === 'sandstorm_gate'
             ? 'Face the sandstorm'
-            : poi.eventId === 'poison_pools'
+            : poi.eventId === 'eclipse_omen'
+              ? 'Study the eclipse omen'
+              : poi.eventId === 'poison_pools'
               ? 'Study the poison pools'
               : 'Investigate tracks';
     default:

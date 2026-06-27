@@ -411,11 +411,18 @@ function CampOverlay({
   const save = useGameStore((s) => s.save);
   const region = getOverworldRegion(regionId);
   const travelPoints = getAllFastTravelDestinations(save);
-  const campTitle = region.id === 'scorpion-valley' ? 'Valley Camp' : 'Nahran Camp';
+  const campTitle =
+    region.id === 'scorpion-valley'
+      ? 'Valley Camp'
+      : region.id === 'black-eclipse-rim'
+        ? 'Eclipse Outpost'
+        : 'Nahran Camp';
   const campBlurb =
     region.id === 'scorpion-valley'
       ? 'Trappers and miners shelter in the canyon. Hamza keeps watch over the poison pools below.'
-      : 'Tents glow against the dunes. Malik rests with scouts, smiths, and guards before the next battle.';
+      : region.id === 'black-eclipse-rim'
+        ? 'Sentinel scouts hold this ridge against the dark. The Black Eclipse Gate stands beyond.'
+        : 'Tents glow against the dunes. Malik rests with scouts, smiths, and guards before the next battle.';
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">

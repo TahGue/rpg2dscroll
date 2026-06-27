@@ -41,5 +41,6 @@ export * from './overworld/overworldTypes';
 export * from './overworld/worldEvents';
 export * from './overworld/nahranOutskirts';
 export * from './overworld/scorpionValley';
+export * from './overworld/blackEclipseRim';
 export * from './overworld/overworldLogic';
 export * from './overworld/npcDialogues';

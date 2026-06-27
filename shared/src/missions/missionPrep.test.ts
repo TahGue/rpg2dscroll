@@ -21,6 +21,17 @@ describe('missionPrep', () => {
     expect(cfg?.startingIron).toBe(8);
   });
 
+  it('returns iron-heavy budget for Broken Watchtower', () => {
+    const cfg = getMissionPrepConfig('mission-broken-watchtower');
+    expect(cfg?.maxTowerBuilds).toBe(3);
+    expect(cfg?.startingIron).toBe(12);
+  });
+
+  it('returns prep config for Black Eclipse Gate', () => {
+    expect(isPrepMission('mission-black-eclipse')).toBe(true);
+    expect(getMissionPrepConfig('mission-black-eclipse')?.startingGold).toBe(250);
+  });
+
   it('enforces tower and trap slot limits', () => {
     const cfg = getMissionPrepConfig('mission-night-attack')!;
     expect(canPlaceBuildType('arrow_tower', 2, 0, cfg)).toBe(false);

@@ -78,6 +78,9 @@ export const MISSION_HERO_PREFERENCE: Partial<Record<PrepMissionId, string>> = {
   'mission-night-attack': 'aisha',
   'mission-silent-oasis': 'yusuf',
   'mission-scorpion-nest': 'hamza',
+  'mission-broken-watchtower': 'hamza',
+  'mission-shrine-sanctum': 'yusuf',
+  'mission-black-eclipse': 'aisha',
 };
 
 export function getHero(id: string): HeroDefinition | undefined {

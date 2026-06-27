@@ -104,6 +104,9 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
               {!save.unlockedBlueprints.includes('spike_trap') && (
                 <li className="text-white/40">? Spike Trap — search the broken caravan</li>
               )}
+              {!save.unlockedBlueprints.includes('iron_tower') && (
+                <li className="text-white/40">? Iron Tower — mine the Iron Vein in Scorpion Valley</li>
+              )}
             </ul>
           </section>
         </div>

@@ -224,10 +224,12 @@ export const NAHRAN_OUTSKIRTS: OverworldRegion = {
 };
 
 import { SCORPION_VALLEY } from './scorpionValley';
+import { BLACK_ECLIPSE_RIM } from './blackEclipseRim';
 
 export const OVERWORLD_REGIONS: Record<string, OverworldRegion> = {
   'nahran-outskirts': NAHRAN_OUTSKIRTS,
   'scorpion-valley': SCORPION_VALLEY,
+  'black-eclipse-rim': BLACK_ECLIPSE_RIM,
 };
 
 export function getOverworldRegion(id: string): OverworldRegion {

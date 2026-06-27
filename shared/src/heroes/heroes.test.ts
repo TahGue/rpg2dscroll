@@ -14,6 +14,10 @@ describe('pickDefaultHeroForMission', () => {
     expect(pickDefaultHeroForMission('mission-scorpion-nest', ['aisha', 'hamza'])).toBe('hamza');
   });
 
+  it('prefers Aisha for Black Eclipse', () => {
+    expect(pickDefaultHeroForMission('mission-black-eclipse', ['aisha', 'hamza'])).toBe('aisha');
+  });
+
   it('falls back to first recruited hero', () => {
     expect(pickDefaultHeroForMission('mission-silent-oasis', ['aisha'])).toBe('aisha');
   });

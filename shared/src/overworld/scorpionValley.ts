@@ -34,6 +34,18 @@ export const SCORPION_VALLEY: OverworldRegion = {
       targetX: 1300,
       targetY: 1510,
     },
+    {
+      id: 'transition-to-eclipse-rim',
+      x: 1880,
+      y: 820,
+      w: 100,
+      h: 160,
+      label: 'Enter Black Eclipse Rim',
+      targetRegionId: 'black-eclipse-rim',
+      targetX: 220,
+      targetY: 720,
+      unlockAfterMission: 'mission-shrine-sanctum',
+    },
   ],
   pois: [
     {

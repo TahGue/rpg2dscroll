@@ -38,6 +38,7 @@ import {
   getWorldEvent,
   getDefenseSkillCost,
   DEFENSE_SKILLS,
+  getBlueprintUnlockMessage,
   type GameSettings,
   type LocalSaveData,
   type MissionType,
@@ -481,6 +482,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let unlockedMissions = save.unlockedMissions;
     if (targetRegionId === 'scorpion-valley' && save.completedMissions.includes('mission-silent-oasis')) {
       for (const loc of ['scorpion-nest', 'iron-vein']) {
+        if (!unlockedMissions.includes(loc)) {
+          unlockedMissions = [...unlockedMissions, loc];
+        }
+      }
+    }
+    if (targetRegionId === 'black-eclipse-rim' && save.completedMissions.includes('mission-shrine-sanctum')) {
+      for (const loc of ['black-eclipse-gate', 'shadow-emir-fortress']) {
         if (!unlockedMissions.includes(loc)) {
           unlockedMissions = [...unlockedMissions, loc];
         }
@@ -1054,6 +1062,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { save } = get();
     if (save.collectedResources.includes(locationId)) return null;
 
+    const grantsIronTowerBlueprint =
+      locationId === 'iron-vein' && !save.unlockedBlueprints.includes('iron_tower');
+
     const materialUpdate = addMaterialRewards(save, {
       iron: def.ironReward,
       leather: def.leatherReward,
@@ -1069,10 +1080,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       unlockedLore: save.unlockedLore.includes(def.loreId)
         ? save.unlockedLore
         : [...save.unlockedLore, def.loreId],
+      unlockedBlueprints: grantsIronTowerBlueprint
+        ? [...save.unlockedBlueprints, 'iron_tower']
+        : save.unlockedBlueprints,
     });
     persistSave(updated);
     if (get().authEmail) void pushCloudSave(updated).catch(() => {});
     set({ save: updated });
+    if (grantsIronTowerBlueprint) {
+      set({ overworldUnlockToast: getBlueprintUnlockMessage('iron_tower') });
+      window.setTimeout(() => set({ overworldUnlockToast: null }), 5000);
+    }
     return {
       gold: def.goldReward,
       water: def.waterReward,

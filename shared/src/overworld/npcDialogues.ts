@@ -41,6 +41,15 @@ export const OVERWORLD_NPCS: Record<string, OverworldNpcDialogue> = {
       'Walk with me — my oil line will scorch a path when the swarm breaks cover.',
     ],
   },
+  eclipse_scout: {
+    id: 'eclipse_scout',
+    name: 'Sentinel Scout',
+    lines: [
+      'The eclipse rim is no place for the unprepared. Iron vanguards march when the sky goes black.',
+      'Your relics from the shrine will matter here — the gate must not fall.',
+      'Beyond lies the Shadow Emir\'s fortress. Hold the Black Eclipse Gate first.',
+    ],
+  },
 };
 
 export function getOverworldNpcDialogue(npcId: string): OverworldNpcDialogue | undefined {

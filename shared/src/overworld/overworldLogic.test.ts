@@ -11,6 +11,7 @@ import {
   isOverworldPOIUnlocked,
 } from './overworldLogic';
 import { SCORPION_VALLEY } from './scorpionValley';
+import { BLACK_ECLIPSE_RIM } from './blackEclipseRim';
 import {
   getAllFastTravelDestinations,
   getActiveRegionTransitions,
@@ -151,5 +152,46 @@ describe('overworld logic', () => {
     const shrine = SCORPION_VALLEY.pois.find((p) => p.id === 'poi-sentinel-shrine')!;
     expect(isOverworldPOIVisible(shrine, save)).toBe(true);
     expect(isOverworldPOIUnlocked(shrine, save)).toBe(true);
+  });
+
+  it('locks eclipse rim transition until shrine sanctum', () => {
+    const transition = SCORPION_VALLEY.transitions!.find((t) => t.id === 'transition-to-eclipse-rim')!;
+    const before = {
+      ...DEFAULT_SAVE,
+      completedMissions: ['mission-scorpion-nest', 'mission-broken-watchtower'] as string[],
+    };
+    expect(isRegionTransitionUnlocked(transition, before)).toBe(false);
+
+    const after = { ...before, completedMissions: [...before.completedMissions, 'mission-shrine-sanctum'] };
+    expect(isRegionTransitionUnlocked(transition, after)).toBe(true);
+    expect(getRegionTransitionAtPoint(SCORPION_VALLEY, 1920, 900, after)?.targetRegionId).toBe(
+      'black-eclipse-rim',
+    );
+  });
+
+  it('hints eclipse finale after shrine', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      completedMissions: [
+        'mission-night-attack',
+        'mission-silent-oasis',
+        'mission-scorpion-nest',
+        'mission-broken-watchtower',
+        'mission-shrine-sanctum',
+      ] as string[],
+      recruitedHeroes: ['aisha', 'yusuf', 'hamza'],
+      unlockedBlueprints: ['arrow_tower', 'spike_trap', 'iron_tower'],
+      visitedOverworldRegions: ['nahran-outskirts', 'scorpion-valley'],
+    };
+    expect(getOverworldQuestHint(save)).toContain('Black Eclipse Rim');
+  });
+
+  it('lists eclipse outpost for fast travel', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      visitedOverworldRegions: ['nahran-outskirts', 'black-eclipse-rim'],
+    };
+    const destinations = getFastTravelDestinations(BLACK_ECLIPSE_RIM, save);
+    expect(destinations.some((p) => p.id === 'poi-eclipse-outpost')).toBe(true);
   });
 });

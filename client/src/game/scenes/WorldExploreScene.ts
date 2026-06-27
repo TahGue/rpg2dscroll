@@ -361,7 +361,7 @@ export class WorldExploreScene extends Phaser.Scene {
         }
         break;
       case 'event':
-        if (poi.eventId === 'broken_caravan' || poi.eventId === 'sandstorm_gate') {
+        if (poi.eventId === 'broken_caravan' || poi.eventId === 'sandstorm_gate' || poi.eventId === 'eclipse_omen') {
           if (!save.completedOverworldEvents.includes(poi.id)) {
             useGameStore.getState().openWorldEvent(poi.id, poi.eventId);
           }
@@ -446,7 +446,8 @@ export class WorldExploreScene extends Phaser.Scene {
   private buildTerrain(region: OverworldRegion): void {
     const { baseColor, accentColor } = region.theme;
     this.add.rectangle(region.width / 2, region.height / 2, region.width, region.height, baseColor);
-    const blobCount = region.id === 'scorpion-valley' ? 60 : 80;
+    const blobCount =
+      region.id === 'black-eclipse-rim' ? 50 : region.id === 'scorpion-valley' ? 60 : 80;
     for (let i = 0; i < blobCount; i++) {
       const x = Phaser.Math.Between(40, region.width - 40);
       const y = Phaser.Math.Between(40, region.height - 40);
@@ -457,11 +458,23 @@ export class WorldExploreScene extends Phaser.Scene {
         this.add.ellipse(wall.x + wall.w / 2, wall.y + wall.h / 2, wall.w, wall.h, 0x44aa66, 0.35).setDepth(2);
       }
     }
+    if (region.id === 'black-eclipse-rim') {
+      this.add.rectangle(980, 200, 400, 120, 0x110818, 0.55).setDepth(2);
+      this.add.ellipse(980, 180, 90, 90, 0x442244, 0.6).setDepth(3);
+    }
   }
 
   private buildRoads(region: OverworldRegion): void {
     const g = this.add.graphics();
     g.setDepth(1);
+    if (region.id === 'black-eclipse-rim') {
+      const roadColor = 0x5a5068;
+      g.fillStyle(roadColor, 0.85);
+      g.fillRoundedRect(220, 680, 820, 40, 8);
+      g.fillRoundedRect(960, 400, 48, 320, 8);
+      g.fillRoundedRect(1400, 620, 200, 40, 8);
+      return;
+    }
     if (region.id === 'scorpion-valley') {
       const roadColor = 0x9a8568;
       g.fillStyle(roadColor, 0.85);
@@ -469,6 +482,7 @@ export class WorldExploreScene extends Phaser.Scene {
       g.fillRoundedRect(580, 320, 420, 40, 8);
       g.fillRoundedRect(920, 360, 48, 860, 8);
       g.fillRoundedRect(300, 600, 200, 40, 8);
+      g.fillRoundedRect(1680, 860, 220, 40, 8);
       return;
     }
     const roadColor = 0xd4b86a;
@@ -482,7 +496,12 @@ export class WorldExploreScene extends Phaser.Scene {
   }
 
   private buildLandmarks(region: OverworldRegion): void {
-    if (region.id === 'scorpion-valley') {
+    if (region.id === 'black-eclipse-rim') {
+      this.add.rectangle(980, 680, 100, 90, 0x333344, 0.95).setDepth(4);
+      this.add.text(980, 630, 'ECLIPSE GATE', { fontSize: '10px', color: '#cc88aa' }).setOrigin(0.5).setDepth(5);
+      this.add.rectangle(1480, 640, 70, 80, 0x221122, 0.95).setDepth(4);
+      this.add.text(1480, 590, 'FORTRESS', { fontSize: '9px', color: '#884466' }).setOrigin(0.5).setDepth(5);
+    } else if (region.id === 'scorpion-valley') {
       this.add.image(620, 300, 'dune_mid').setOrigin(0.5, 1).setTint(0x5a4030).setScale(1.1).setDepth(3);
       this.add.image(980, 1150, 'dune_far').setOrigin(0.5, 1).setTint(0x4a3828).setScale(1.3).setDepth(2);
       this.add.rectangle(1680, 820, 60, 80, 0x555555, 0.9).setDepth(4);
