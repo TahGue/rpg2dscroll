@@ -612,4 +612,8 @@ export class Player extends Phaser.GameObjects.Sprite {
       if (!this.dead) this.clearTint();
     });
   }
+
+  getFacingDirection(): number {
+    return this.facing === 'right' ? 1 : -1;
+  }
 }

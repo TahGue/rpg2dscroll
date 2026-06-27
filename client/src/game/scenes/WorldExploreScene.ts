@@ -264,6 +264,13 @@ export class WorldExploreScene extends Phaser.Scene {
         OverworldBridge.openCampHub();
         break;
       case 'npc': {
+        if (poi.npcId === 'blacksmith') {
+          const recruited = useGameStore.getState().save.recruitedHeroes.includes('aisha');
+          if (!recruited) {
+            useGameStore.setState({ overworldRecruitOffer: { heroId: 'aisha' } });
+            break;
+          }
+        }
         const dialog = poi.npcId ? getOverworldNpcDialogue(poi.npcId) : undefined;
         if (dialog) OverworldBridge.openNpcDialog(dialog.id, dialog.lines, dialog.name);
         break;
@@ -283,12 +290,17 @@ export class WorldExploreScene extends Phaser.Scene {
         }
         break;
       case 'chest':
-      case 'cart':
-        if (OverworldBridge.grantChest(poi.id, poi.chestGold ?? 0, poi.chestIron ?? 0)) {
+      case 'cart': {
+        const granted = OverworldBridge.grantChest(poi.id, poi.chestGold ?? 0, poi.chestIron ?? 0);
+        const blueprintNew =
+          poi.kind === 'cart' ? useGameStore.getState().unlockBlueprint('spike_trap') : false;
+        if (granted || blueprintNew) {
           SoundManager.play('gold');
-          this.showFloatText(`+${poi.chestGold ?? 0} gold`);
+          if (blueprintNew) this.showFloatText('Spike Trap blueprint recovered!');
+          else if (granted) this.showFloatText(`+${poi.chestGold ?? 0} gold`);
         }
         break;
+      }
       case 'resource':
         if (poi.resourceLocationId) {
           useGameStore.getState().collectResource(poi.resourceLocationId);

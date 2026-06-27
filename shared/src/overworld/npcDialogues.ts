@@ -18,8 +18,8 @@ export const OVERWORLD_NPCS: Record<string, OverworldNpcDialogue> = {
     id: 'blacksmith',
     name: 'Camp Blacksmith',
     lines: [
+      'Aisha trains archers at the edge of camp. She will stand with you at the gate.',
       'Your blade still has an edge, but the desert dulls steel fast.',
-      'Visit the upgrade tent in camp when you have gold.',
       'Iron from the caves will buy stronger towers later.',
     ],
   },

@@ -1,5 +1,5 @@
 import { useGameStore } from '@/store/gameStore';
-import { getBuildDefinition, getWaveStartHint, getWaveStartLabel } from '@malik/shared';
+import { getBuildDefinition, getHero, getWaveStartHint, getWaveStartLabel } from '@malik/shared';
 import { buildMissionControlHints } from '@/game/utils/controlHints';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
@@ -143,7 +143,7 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           >
             {waveStartLabel}
           </button>
-          <p className="text-[10px] text-white/40">Press H to sound the horn</p>
+          <p className="text-[10px] text-white/40">Press Y to sound the horn</p>
         </div>
       )}
 
@@ -171,6 +171,19 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           {!mission.isAmbush && (
             <p className="text-[10px] text-white/50">
               Build: <span className="text-desert-gold">{buildName}</span>
+              {mission.usePrepBuildRules && (
+                <span className="text-white/40">
+                  {' '}
+                  · towers {mission.towersBuilt}/{mission.maxTowerBuilds} · traps {mission.trapsBuilt}/
+                  {mission.maxTrapBuilds}
+                </span>
+              )}
+            </p>
+          )}
+          {mission.heroId && (
+            <p className="text-[10px] text-cyan-300">
+              Hero: {getHero(mission.heroId)?.name ?? mission.heroId}
+              {mission.gateGuardActive ? ' · Gate Guard' : ''}
             </p>
           )}
           {mission.bossPhase > 0 && mission.bossName && (
@@ -193,7 +206,15 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           <p>
             Gold <span className="font-bold text-desert-gold">{mission.goldCollected}</span>
           </p>
+          {mission.usePrepBuildRules && (
+            <p className="text-[10px] text-white/50">
+              Wood {mission.missionWood} · Iron {mission.missionIron}
+            </p>
+          )}
           <p className="mt-1 text-[10px] text-white/40">{controlHints}</p>
+          {mission.heroId && (
+            <SkillBar label="Hero (Q)" pct={mission.heroAbilityCooldown} color="bg-teal-400" />
+          )}
           <SkillBar label="Bash" pct={mission.shieldBashCooldown} color="bg-cyan-400" />
           <SkillBar label="Dodge" pct={mission.dodgeCooldown} color="bg-green-400" />
           {mission.sandSlashUnlocked && (

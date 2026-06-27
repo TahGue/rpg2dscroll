@@ -15,8 +15,10 @@ import { RepairStation } from '../entities/RepairStation';
 import { IronTower } from '../entities/IronTower';
 import { LionDen } from '../entities/LionDen';
 import { Lion } from '../entities/Lion';
+import { GateGuard } from '../entities/GateGuard';
 import { WaveManager } from '../systems/WaveManager';
 import { MissionControlBridge } from '../systems/MissionControlBridge';
+import { HeroAbilitySystem } from '../systems/HeroAbilitySystem';
 import { HazardManager } from '../systems/HazardManager';
 import { EclipseOverlay } from '../systems/EclipseOverlay';
 import { MissionBridge } from '../systems/MissionBridge';
@@ -46,6 +48,8 @@ export class MissionScene extends Phaser.Scene {
   private barricades: Barricade[] = [];
   private repairStations: RepairStation[] = [];
   private lion: Lion | null = null;
+  private gateGuard: GateGuard | null = null;
+  private heroAbilities: HeroAbilitySystem | null = null;
   private groundGroup!: Phaser.Physics.Arcade.StaticGroup;
   private enemies!: Phaser.GameObjects.Group;
   private waveManager!: WaveManager;
@@ -139,6 +143,10 @@ export class MissionScene extends Phaser.Scene {
       this.showAmbushMarker();
     }
     this.createPlayer();
+    this.heroAbilities = new HeroAbilitySystem(this);
+    if (MissionBridge.isGateGuardActive() && this.gate) {
+      this.gateGuard = new GateGuard(this, this.gateX - 70, this.groundY);
+    }
     if (this.defenseLayout.hazards.length > 0) {
       this.hazardManager = new HazardManager(this, this.defenseLayout.hazards, this.worldWidth, this.groundY);
     }
@@ -210,6 +218,8 @@ export class MissionScene extends Phaser.Scene {
     }
     const defenseTarget = this.getDefenseTarget();
     this.lion?.update(this.time.now, enemyList.filter((e) => e.isAlive()), defenseTarget?.x);
+    this.gateGuard?.update(this.time.now, enemyList);
+    this.heroAbilities?.tickCooldownSync(MissionBridge.getActiveHeroId());
     this.hazardManager?.update(this.player, delta);
     this.eclipseOverlay?.update(this.player.x, delta);
     updateBiomeParallax(this, delta);
@@ -288,6 +298,16 @@ export class MissionScene extends Phaser.Scene {
         const enemies = this.enemies.getChildren() as Enemy[];
         this.lion.tryRoar(enemies.filter((e) => e.isAlive()));
       }
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.input.keyboard!.addKey('Q'))) {
+      const enemies = this.enemies.getChildren() as Enemy[];
+      this.heroAbilities?.tryUseAbility(
+        this.player.x,
+        this.player.y,
+        this.player.getFacingDirection(),
+        enemies.filter((e) => e.isAlive()),
+      );
     }
   }
 
@@ -503,7 +523,7 @@ export class MissionScene extends Phaser.Scene {
       useGameStore.getState().togglePause();
     });
 
-    this.input.keyboard.on('keydown-H', () => {
+    this.input.keyboard.on('keydown-Y', () => {
       if (this.missionEnded) return;
       if (!useGameStore.getState().mission.awaitingWaveStart) return;
       SoundManager.play('wave');

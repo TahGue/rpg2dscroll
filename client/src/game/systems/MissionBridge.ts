@@ -246,12 +246,84 @@ export class MissionBridge {
     return getBuildDefinition(useGameStore.getState().save.selectedBuild) ?? getBuildDefinition('arrow_tower')!;
   }
 
+  static syncHeroAbilityCooldown(pct: number): void {
+    useGameStore.getState().updateMissionRuntime({ heroAbilityCooldown: pct });
+  }
+
+  static getActiveHeroId(): string | null {
+    return useGameStore.getState().mission.heroId;
+  }
+
+  static usePrepBuildRules(): boolean {
+    return useGameStore.getState().mission.usePrepBuildRules;
+  }
+
+  static getMissionWood(): number {
+    return useGameStore.getState().mission.missionWood;
+  }
+
+  static getMissionIron(): number {
+    return useGameStore.getState().mission.missionIron;
+  }
+
+  static spendMissionWood(amount: number): boolean {
+    const state = useGameStore.getState();
+    if (state.mission.missionWood < amount) return false;
+    state.updateMissionRuntime({ missionWood: state.mission.missionWood - amount });
+    return true;
+  }
+
+  static spendMissionIron(amount: number): boolean {
+    const state = useGameStore.getState();
+    if (state.mission.missionIron < amount) return false;
+    state.updateMissionRuntime({ missionIron: state.mission.missionIron - amount });
+    return true;
+  }
+
+  static refundMissionWood(amount: number): void {
+    const state = useGameStore.getState();
+    state.updateMissionRuntime({ missionWood: state.mission.missionWood + amount });
+  }
+
+  static refundMissionIron(amount: number): void {
+    const state = useGameStore.getState();
+    state.updateMissionRuntime({ missionIron: state.mission.missionIron + amount });
+  }
+
+  static recordBuildPlaced(buildId: string): void {
+    const state = useGameStore.getState();
+    if (buildId === 'arrow_tower' || buildId === 'iron_tower') {
+      state.updateMissionRuntime({ towersBuilt: state.mission.towersBuilt + 1 });
+    } else if (buildId === 'spike_trap') {
+      state.updateMissionRuntime({ trapsBuilt: state.mission.trapsBuilt + 1 });
+    }
+  }
+
+  static canPlaceBuildType(buildId: string): boolean {
+    const m = useGameStore.getState().mission;
+    if (!m.usePrepBuildRules) return true;
+    if (buildId === 'arrow_tower' || buildId === 'iron_tower') {
+      return m.towersBuilt < m.maxTowerBuilds;
+    }
+    if (buildId === 'spike_trap') {
+      return m.trapsBuilt < m.maxTrapBuilds;
+    }
+    return true;
+  }
+
+  static isGateGuardActive(): boolean {
+    return useGameStore.getState().mission.gateGuardActive;
+  }
+
   static getBuildUnlockContext(): BuildUnlockContext {
     const save = useGameStore.getState().save;
+    const mission = useGameStore.getState().mission;
     return {
       completedMissions: save.completedMissions,
       lionLevel: save.upgrades.lion_level ?? 0,
       lionDenCampLevel: save.campUpgrades.lion_den ?? 0,
+      unlockedBlueprints: save.unlockedBlueprints,
+      strictBlueprintsOnly: mission.usePrepBuildRules,
     };
   }
 

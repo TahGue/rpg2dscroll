@@ -12,7 +12,7 @@ function formatTime(ms: number): string {
 
 export function MissionResultScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
-  const startMission = useGameStore((s) => s.startMission);
+  const queueMissionStart = useGameStore((s) => s.queueMissionStart);
   const missionReturnScreen = useGameStore((s) => s.missionReturnScreen);
   const refreshOverworldAfterMission = useGameStore((s) => s.refreshOverworldAfterMission);
   const result = useGameStore((s) => s.lastMissionResult);
@@ -176,7 +176,7 @@ export function MissionResultScreen() {
                 {missionReturnScreen === 'world_explore' ? 'Desert' : 'Map'}
               </ActionButton>
               <ActionButton
-                onClick={() => result.missionId && startMission(result.missionId, missionReturnScreen)}
+                onClick={() => result.missionId && queueMissionStart(result.missionId, missionReturnScreen)}
               >
                 Retry
               </ActionButton>

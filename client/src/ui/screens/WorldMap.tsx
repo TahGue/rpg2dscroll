@@ -17,7 +17,7 @@ import { LocationInfoPanel } from '@/ui/world-map/LocationInfoPanel';
 export function WorldMap() {
   const setScreen = useGameStore((s) => s.setScreen);
   const save = useGameStore((s) => s.save);
-  const startMission = useGameStore((s) => s.startMission);
+  const queueMissionStart = useGameStore((s) => s.queueMissionStart);
   const restAtCamp = useGameStore((s) => s.restAtCamp);
   const unlockLore = useGameStore((s) => s.unlockLore);
   const pendingActBanner = useGameStore((s) => s.pendingActBanner);
@@ -83,7 +83,7 @@ export function WorldMap() {
       return;
     }
 
-    startMission(mission.id, 'world_map');
+    queueMissionStart(mission.id, 'world_map');
   };
 
   const handleCollectResource = (locationId: string) => {
@@ -118,7 +118,7 @@ export function WorldMap() {
         >
           ← Main Menu
         </button>
-        <div className="font-display text-base text-desert-gold sm:text-lg">Malik&apos;s Desert Journey</div>
+        <div className="font-display text-base text-desert-gold sm:text-lg">Campaign Overview</div>
         <div className="flex flex-wrap gap-3 text-xs text-desert-gold sm:justify-end sm:gap-4 sm:text-sm">
           <span>Lv.{save.level}</span>
           <span>{save.gold}g</span>

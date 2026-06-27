@@ -63,8 +63,16 @@ describe('overworld logic', () => {
   });
 
   it('returns quest hints based on progression', () => {
-    expect(getOverworldQuestHint({ completedMissions: [] })).toContain('Nahran Gate');
-    expect(getOverworldQuestHint({ completedMissions: ['mission-night-attack'] })).toContain('Silent Oasis');
+    const fresh = { ...DEFAULT_SAVE, completedMissions: [] as string[] };
+    expect(getOverworldQuestHint(fresh)).toContain('Blacksmith');
+
+    const ready = {
+      ...fresh,
+      recruitedHeroes: ['aisha'],
+      unlockedBlueprints: ['arrow_tower', 'spike_trap'],
+    };
+    expect(getOverworldQuestHint(ready)).toContain('Nahran Gate');
+    expect(getOverworldQuestHint({ ...ready, completedMissions: ['mission-night-attack'] })).toContain('Silent Oasis');
   });
 
   it('lists fast travel after oasis is visited', () => {

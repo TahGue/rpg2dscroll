@@ -10,6 +10,7 @@ import { InventoryScreen } from '@/ui/screens/InventoryScreen';
 import { PostGameScreen } from '@/ui/screens/PostGameScreen';
 import { MissionResultScreen } from '@/ui/screens/MissionResultScreen';
 import { MissionView } from '@/ui/screens/MissionView';
+import { MissionPrepScreen } from '@/ui/screens/MissionPrepScreen';
 import { SettingsScreen } from '@/ui/screens/SettingsScreen';
 import { LoginScreen } from '@/ui/screens/LoginScreen';
 import { LeaderboardScreen } from '@/ui/screens/LeaderboardScreen';
@@ -17,13 +18,33 @@ import { AchievementsScreen } from '@/ui/screens/AchievementsScreen';
 import { LoreScreen } from '@/ui/screens/LoreScreen';
 import { ScreenTransition } from '@/ui/components/ScreenTransition';
 import { useMusic } from '@/hooks/useMusic';
+import { SoundManager } from '@/game/systems/SoundManager';
+
+function MissionPrepRoute() {
+  const prepMissionId = useGameStore((s) => s.prepMissionId);
+  const missionReturnScreen = useGameStore((s) => s.missionReturnScreen);
+  const setScreen = useGameStore((s) => s.setScreen);
+
+  if (!prepMissionId) return null;
+
+  return (
+    <MissionPrepScreen
+      missionId={prepMissionId}
+      onBack={() => {
+        SoundManager.play('click');
+        useGameStore.setState({ prepMissionId: null });
+        setScreen(missionReturnScreen);
+      }}
+    />
+  );
+}
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
   const authEmail = useGameStore((s) => s.authEmail);
   const pullCloudSave = useGameStore((s) => s.pullCloudSave);
   const musicMode =
-    screen === 'mission'
+    screen === 'mission' || screen === 'mission_prep'
       ? 'mission'
       : screen === 'world_map' || screen === 'world_explore'
         ? 'map'
@@ -53,6 +74,7 @@ export default function App() {
         {screen === 'achievements' && <AchievementsScreen />}
         {screen === 'lore' && <LoreScreen />}
         {screen === 'mission_result' && <MissionResultScreen />}
+        {screen === 'mission_prep' && <MissionPrepRoute />}
         {screen === 'mission' && <MissionView />}
       </ScreenTransition>
     </div>

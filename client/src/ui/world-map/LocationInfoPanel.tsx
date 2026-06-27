@@ -12,6 +12,7 @@ import {
   getLocationDisplayName,
   getBuildUnlocksGrantedByMission,
   getBuildDefinition,
+  isPrepMission,
   PRIMARY_ROUTE,
   type MissionDefinition,
 } from '@malik/shared';
@@ -269,7 +270,7 @@ function CampPanel({
 
 function PanelActions({
   loc,
-  state,
+  state: _panelState,
   save,
   mission,
   unlocked,
@@ -352,7 +353,11 @@ function PanelActions({
           onStartMission(mission);
         }}
       >
-        {completed ? 'Replay Mission' : state === 'current' ? 'Start Mission' : 'Start Mission'}
+        {completed
+          ? 'Replay Mission'
+          : mission && isPrepMission(mission.id)
+            ? 'Prepare Defense'
+            : 'Start Mission'}
       </ActionButton>
     );
   }

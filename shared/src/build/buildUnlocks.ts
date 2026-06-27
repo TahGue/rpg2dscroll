@@ -1,29 +1,45 @@
 import type { BuildChoice } from '../types/save';
 import { BUILD_OPTIONS } from './buildDefinitions';
+import { DEFAULT_BLUEPRINTS } from './blueprints';
 
 export interface BuildUnlockContext {
   completedMissions: string[];
   lionLevel: number;
   lionDenCampLevel: number;
+  unlockedBlueprints?: string[];
+  /** When true, only blueprint + basic defaults apply (Nahran prep missions). */
+  strictBlueprintsOnly?: boolean;
+}
+
+const ALL_BUILD_IDS = BUILD_OPTIONS.map((b) => b.id as BuildChoice);
+
+function blueprintBuilds(blueprints: string[]): BuildChoice[] {
+  return ALL_BUILD_IDS.filter((id) => blueprints.includes(id));
 }
 
 export function getUnlockedBuildIds(ctx: BuildUnlockContext): BuildChoice[] {
-  const ids: BuildChoice[] = ['arrow_tower', 'spike_trap'];
+  const blueprints = ctx.unlockedBlueprints ?? DEFAULT_BLUEPRINTS;
+  const ids = new Set<BuildChoice>(blueprintBuilds(blueprints));
+
+  if (ctx.strictBlueprintsOnly) {
+    return [...ids];
+  }
 
   if (ctx.completedMissions.includes('mission-red-dune-pass')) {
-    ids.push('barricade');
+    ids.add('barricade');
   }
   if (ctx.completedMissions.includes('mission-silent-oasis')) {
-    ids.push('repair_station');
+    ids.add('repair_station');
   }
   if (ctx.completedMissions.includes('mission-broken-watchtower')) {
-    ids.push('iron_tower');
+    ids.add('iron_tower');
   }
   if (ctx.lionLevel >= 1 && ctx.lionDenCampLevel >= 1) {
-    ids.push('lion_den');
+    ids.add('lion_den');
   }
 
-  return ids;
+  if (ids.size === 0) ids.add('arrow_tower');
+  return [...ids];
 }
 
 export function cycleBuildChoice(current: BuildChoice, ctx: BuildUnlockContext): BuildChoice {

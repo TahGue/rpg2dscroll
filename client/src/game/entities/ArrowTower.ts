@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ARROW_TOWER } from '@malik/shared';
+import { ARROW_TOWER, getHero } from '@malik/shared';
 import { MissionBridge } from '../systems/MissionBridge';
 import { SoundManager } from '../systems/SoundManager';
 import type { Enemy } from './Enemy';
@@ -8,11 +8,14 @@ export class ArrowTower extends Phaser.GameObjects.Container {
   private lastShot = 0;
   private range = ARROW_TOWER.range;
   private damage: number;
-  private fireRate = ARROW_TOWER.fireRateMs;
+  private fireRate: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
     this.damage = MissionBridge.getTowerDamage();
+    const heroId = MissionBridge.getActiveHeroId();
+    const hero = heroId ? getHero(heroId) : undefined;
+    this.fireRate = Math.round(ARROW_TOWER.fireRateMs * (hero?.arrowTowerFireRateMult ?? 1));
 
     const base = scene.add.image(0, 0, 'tower_base').setOrigin(0.5, 1);
     const top = scene.add.image(0, -50, 'tower_top').setOrigin(0.5, 1);

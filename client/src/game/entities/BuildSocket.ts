@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { isTowerBuild, isTrapBuild } from '@malik/shared';
 import { isBuildUnlocked } from '@malik/shared';
 import { MissionBridge } from '../systems/MissionBridge';
 import { SoundManager } from '../systems/SoundManager';
@@ -43,6 +44,7 @@ export class BuildSocket extends Phaser.GameObjects.Container {
     const build = MissionBridge.getSelectedBuild();
     const ctx = MissionBridge.getBuildUnlockContext();
     const locked = !isBuildUnlocked(build.id as Parameters<typeof isBuildUnlocked>[0], ctx);
+    const slotFull = !MissionBridge.canPlaceBuildType(build.id);
 
     if (!this.hintText) {
       this.hintText = this.scene.add
@@ -67,16 +69,19 @@ export class BuildSocket extends Phaser.GameObjects.Container {
       return;
     }
 
+    if (slotFull) {
+      const label = isTowerBuild(build.id) ? 'tower slots full' : isTrapBuild(build.id) ? 'trap slots full' : 'slots full';
+      this.hintText.setText(`[B] ${build.name} (${label})`);
+      this.hintText.setColor('#ff6666');
+      return;
+    }
+
     const parts = [`${build.goldCost}g`];
     if (build.woodCost > 0) parts.push(`${build.woodCost} wood`);
     if (build.ironCost > 0) parts.push(`${build.ironCost} iron`);
     this.hintText.setText(`[B] ${build.name} (${parts.join(' + ')})`);
 
-    const save = MissionBridge.getSaveSnapshot();
-    const canAfford =
-      MissionBridge.getGoldCollected() >= build.goldCost &&
-      (build.ironCost <= 0 || (save.iron ?? 0) >= build.ironCost) &&
-      (build.woodCost <= 0 || (save.wood ?? 0) >= build.woodCost);
+    const canAfford = this.canAffordBuild(build.goldCost, build.woodCost, build.ironCost);
     this.hintText.setColor(canAfford ? '#d4a843' : '#ff6666');
   }
 
@@ -86,32 +91,40 @@ export class BuildSocket extends Phaser.GameObjects.Container {
     const build = MissionBridge.getSelectedBuild();
     const ctx = MissionBridge.getBuildUnlockContext();
     if (!isBuildUnlocked(build.id as Parameters<typeof isBuildUnlocked>[0], ctx)) return null;
+    if (!MissionBridge.canPlaceBuildType(build.id)) return null;
 
     if (!MissionBridge.spendMissionGold(build.goldCost)) return null;
 
-    const save = MissionBridge.getSaveSnapshot();
+    const useMissionSupplies = MissionBridge.usePrepBuildRules();
     if (build.ironCost > 0) {
-      if ((save.iron ?? 0) < build.ironCost) {
+      const ok = useMissionSupplies
+        ? MissionBridge.spendMissionIron(build.ironCost)
+        : this.spendSaveIron(build.ironCost);
+      if (!ok) {
         MissionBridge.addGold(build.goldCost);
         return null;
       }
-      MissionBridge.spendSaveIron(build.ironCost);
     }
 
     if (build.woodCost > 0) {
-      const current = MissionBridge.getSaveSnapshot();
-      if ((current.wood ?? 0) < build.woodCost) {
+      const ok = useMissionSupplies
+        ? MissionBridge.spendMissionWood(build.woodCost)
+        : this.spendSaveWood(build.woodCost);
+      if (!ok) {
         MissionBridge.addGold(build.goldCost);
-        if (build.ironCost > 0) MissionBridge.refundSaveIron(build.ironCost);
+        if (build.ironCost > 0) {
+          if (useMissionSupplies) MissionBridge.refundMissionIron(build.ironCost);
+          else MissionBridge.refundSaveIron(build.ironCost);
+        }
         return null;
       }
-      MissionBridge.spendSaveWood(build.woodCost);
     }
 
     this.built = true;
     this.platform.setVisible(false);
     this.hintText?.destroy();
     SoundManager.play('build');
+    MissionBridge.recordBuildPlaced(build.id);
 
     switch (build.id) {
       case 'spike_trap':
@@ -127,5 +140,32 @@ export class BuildSocket extends Phaser.GameObjects.Container {
       default:
         return new ArrowTower(this.scene, this.x, this.y);
     }
+  }
+
+  private canAffordBuild(goldCost: number, woodCost: number, ironCost: number): boolean {
+    if (MissionBridge.getGoldCollected() < goldCost) return false;
+    if (MissionBridge.usePrepBuildRules()) {
+      if (woodCost > 0 && MissionBridge.getMissionWood() < woodCost) return false;
+      if (ironCost > 0 && MissionBridge.getMissionIron() < ironCost) return false;
+      return true;
+    }
+    const save = MissionBridge.getSaveSnapshot();
+    if (ironCost > 0 && (save.iron ?? 0) < ironCost) return false;
+    if (woodCost > 0 && (save.wood ?? 0) < woodCost) return false;
+    return true;
+  }
+
+  private spendSaveIron(amount: number): boolean {
+    const save = MissionBridge.getSaveSnapshot();
+    if ((save.iron ?? 0) < amount) return false;
+    MissionBridge.spendSaveIron(amount);
+    return true;
+  }
+
+  private spendSaveWood(amount: number): boolean {
+    const save = MissionBridge.getSaveSnapshot();
+    if ((save.wood ?? 0) < amount) return false;
+    MissionBridge.spendSaveWood(amount);
+    return true;
   }
 }

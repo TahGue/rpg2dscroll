@@ -59,6 +59,16 @@ export interface LocalSaveData {
   exploredOverworldCells: string[];
   defeatedOverworldPatrols: string[];
   completedOverworldEvents: string[];
+  /** Hero ids recruited in the overworld (e.g. aisha). */
+  recruitedHeroes: string[];
+  /** Last hero chosen on the prep screen. */
+  selectedHeroId: string | null;
+  /** Trap/tower blueprints discovered while exploring. */
+  unlockedBlueprints: string[];
+  /** Default gate guard assignment on prep screen. */
+  prepUseGateGuard: boolean;
+  /** Defense skill tree — Phase 1 uses build_speed, repair_speed, cheaper_towers. */
+  defenseSkills: Record<string, number>;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -69,7 +79,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 export const DEFAULT_SAVE: LocalSaveData = {
-  version: 2,
+  version: 3,
   gold: 0,
   water: 0,
   iron: 0,
@@ -115,6 +125,15 @@ export const DEFAULT_SAVE: LocalSaveData = {
   exploredOverworldCells: [],
   defeatedOverworldPatrols: [],
   completedOverworldEvents: [],
+  recruitedHeroes: [],
+  selectedHeroId: null,
+  unlockedBlueprints: ['arrow_tower'],
+  prepUseGateGuard: true,
+  defenseSkills: {
+    build_speed: 0,
+    repair_speed: 0,
+    cheaper_towers: 0,
+  },
 };
 
 export const SAVE_KEY = 'malik-desert-defense-save';
@@ -156,6 +175,11 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     exploredOverworldCells: parsed.exploredOverworldCells ?? [],
     defeatedOverworldPatrols: parsed.defeatedOverworldPatrols ?? [],
     completedOverworldEvents: parsed.completedOverworldEvents ?? [],
+    recruitedHeroes: parsed.recruitedHeroes ?? [],
+    selectedHeroId: parsed.selectedHeroId ?? null,
+    unlockedBlueprints: parsed.unlockedBlueprints ?? DEFAULT_SAVE.unlockedBlueprints,
+    prepUseGateGuard: parsed.prepUseGateGuard ?? true,
+    defenseSkills: { ...DEFAULT_SAVE.defenseSkills, ...parsed.defenseSkills },
   };
   return {
     ...base,

@@ -10,10 +10,15 @@ const baseCtx = {
   completedMissions: [] as string[],
   lionLevel: 0,
   lionDenCampLevel: 0,
+  unlockedBlueprints: ['arrow_tower', 'spike_trap'],
 };
 
 describe('buildUnlocks', () => {
-  it('starts with arrow tower and spike trap', () => {
+  it('starts with arrow tower when only default blueprint exists', () => {
+    expect(getUnlockedBuildIds({ ...baseCtx, unlockedBlueprints: ['arrow_tower'] })).toEqual(['arrow_tower']);
+  });
+
+  it('includes discovered blueprints', () => {
     expect(getUnlockedBuildIds(baseCtx)).toEqual(['arrow_tower', 'spike_trap']);
   });
 

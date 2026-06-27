@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getUnseenActForMission, getFastTravelDestinations, getOverworldRegion, SHOP_ITEMS } from '@malik/shared';
+import { getUnseenActForMission, getFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { WorldExploreManager } from '@/game/WorldExploreManager';
 import { OverworldBridge } from '@/game/systems/OverworldBridge';
@@ -40,13 +40,15 @@ export function WorldExploreView() {
   const mapOpen = useGameStore((s) => s.overworldMapOpen);
   const setOverworldMapOpen = useGameStore((s) => s.setOverworldMapOpen);
   const fastTravelTo = useGameStore((s) => s.fastTravelTo);
+  const recruitOffer = useGameStore((s) => s.overworldRecruitOffer);
+  const recruitHero = useGameStore((s) => s.recruitHero);
 
   const [shopOpen, setShopOpen] = useState(false);
   const regionId = save.overworldPosition.regionId || 'nahran-outskirts';
   const regionName = getOverworldRegion(regionId).name;
 
   const overlayOpen = Boolean(
-    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingDialog || mapOpen,
+    campOpen || shopOpen || overworldDialog || missionOffer || pendingActBanner || pendingDialog || mapOpen || recruitOffer,
   );
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export function WorldExploreView() {
       <div className="pointer-events-auto relative z-20 flex shrink-0 gap-2 overflow-x-auto border-b border-white/5 px-3 py-2 sm:px-6">
         <NavBtn label="Camp" onClick={() => { SoundManager.play('click'); setOverworldCampOpen(true); }} />
         <NavBtn label="Map (M)" onClick={() => { SoundManager.play('click'); setOverworldMapOpen(true); }} />
-        <NavBtn label="Region Map" onClick={() => navigate('world_map')} />
+        <NavBtn label="Campaign Overview" onClick={() => navigate('world_map')} />
         <NavBtn label="Inventory" onClick={() => navigate('inventory')} />
         <NavBtn label="Upgrades" onClick={() => navigate('upgrade')} />
         <NavBtn label="Lore" onClick={() => navigate('lore')} />
@@ -198,6 +200,20 @@ export function WorldExploreView() {
         />
       )}
 
+      {recruitOffer && (
+        <RecruitOfferModal
+          heroId={recruitOffer.heroId}
+          onAccept={() => {
+            SoundManager.play('unlock');
+            recruitHero(recruitOffer.heroId);
+          }}
+          onDecline={() => {
+            SoundManager.play('click');
+            useGameStore.setState({ overworldRecruitOffer: null });
+          }}
+        />
+      )}
+
       {pendingActBanner && <ActBannerModal actId={pendingActBanner} onDismiss={dismissActBanner} />}
 
       {pendingDialog && <DialogSystem lines={pendingDialog.lines} onComplete={dismissDialog} />}
@@ -254,7 +270,50 @@ function MissionOfferModal({
             onClick={onAccept}
             className="flex-1 rounded-lg bg-desert-gold py-3 text-sm font-semibold text-desert-night hover:bg-yellow-400"
           >
-            Start mission
+            Prepare defense
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecruitOfferModal({
+  heroId,
+  onAccept,
+  onDecline,
+}: {
+  heroId: string;
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  const hero = getHero(heroId) ?? AISHA;
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-teal-400/40 bg-desert-night/95 p-8 text-white shadow-2xl">
+        <p className="mb-1 text-xs uppercase tracking-widest text-teal-300">Recruit hero</p>
+        <h3 className="font-display mb-1 text-2xl text-desert-gold">
+          {hero.name} — {hero.title}
+        </h3>
+        <p className="mb-2 text-sm text-white/70">{hero.role}</p>
+        <p className="mb-1 text-xs text-cyan-200">Passive: {hero.passiveDescription}</p>
+        <p className="mb-6 text-xs text-cyan-200">
+          Active — {hero.activeName}: {hero.activeDescription}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onDecline}
+            className="flex-1 rounded-lg border border-white/20 py-3 text-sm text-white/70 hover:bg-white/5"
+          >
+            Later
+          </button>
+          <button
+            type="button"
+            onClick={onAccept}
+            className="flex-1 rounded-lg bg-teal-500 py-3 text-sm font-semibold text-desert-night hover:bg-teal-400"
+          >
+            Recruit
           </button>
         </div>
       </div>

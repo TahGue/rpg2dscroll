@@ -31,10 +31,13 @@ import {
   isBuildUnlocked,
   getOverworldRegion,
   canFastTravelTo,
+  isPrepMission,
+  getMissionPrepConfig,
   type GameSettings,
   type LocalSaveData,
   type MissionType,
   type MissionBoostType,
+  type MissionLoadout,
   type BuildChoice,
   type LionMode,
   type ResourceRewards,
@@ -47,6 +50,7 @@ export type GameScreen =
   | 'main_menu'
   | 'world_explore'
   | 'world_map'
+  | 'mission_prep'
   | 'mission'
   | 'upgrade'
   | 'camp_upgrades'
@@ -104,6 +108,16 @@ interface MissionRuntimeState {
   bossMaxHp: number;
   bossName: string | null;
   bossPhase: number;
+  heroId: string | null;
+  gateGuardActive: boolean;
+  missionWood: number;
+  missionIron: number;
+  towersBuilt: number;
+  trapsBuilt: number;
+  maxTowerBuilds: number;
+  maxTrapBuilds: number;
+  heroAbilityCooldown: number;
+  usePrepBuildRules: boolean;
 }
 
 interface GameStore {
@@ -145,6 +159,9 @@ interface GameStore {
   mapUnlockAnnouncement: string[] | null;
   /** Mission to auto-start after act banner dismiss. */
   pendingMissionId: string | null;
+  /** Mission awaiting prep screen confirmation. */
+  prepMissionId: string | null;
+  overworldRecruitOffer: { heroId: string } | null;
   /** Screen to return to after mission abort/result. */
   missionReturnScreen: GameScreen;
   overworldInteract: { prompt: string | null; poiId: string | null; poi: OverworldPOI | null };
@@ -165,7 +182,13 @@ interface GameStore {
   mapHomeScreen: GameScreen;
 
   setScreen: (screen: GameScreen) => void;
-  startMission: (missionId: string, returnScreen?: GameScreen) => void;
+  openMissionPrep: (missionId: string) => void;
+  confirmMissionPrep: (missionId: string, loadout: MissionLoadout) => void;
+  queueMissionStart: (missionId: string, returnScreen?: GameScreen) => void;
+  recruitHero: (heroId: string) => void;
+  unlockBlueprint: (blueprintId: BuildChoice) => boolean;
+  updateSaveFields: (partial: Partial<LocalSaveData>) => void;
+  startMission: (missionId: string, returnScreen?: GameScreen, loadout?: MissionLoadout) => void;
   abortMission: () => void;
   endMission: (result: Omit<NonNullable<GameStore['lastMissionResult']>, 'missionId' | 'levelsGained' | 'score' | 'isNewBest' | 'elapsedMs' | 'speedBonusGold' | 'newAchievements' | 'missionType' | 'isAmbush' | 'isShrine' | 'isCaravan' | 'isSurvive' | 'isOasis' | 'waterEarned' | 'campaignJustCompleted' | 'inventoryEarned' | 'ngPlusBonusGold' | 'ngPlusBonusXp' | 'unlockedLocationIds'>) => void;
   updateMissionRuntime: (partial: Partial<MissionRuntimeState>) => void;
@@ -258,6 +281,16 @@ const defaultMissionState = (): MissionRuntimeState => ({
   bossMaxHp: 0,
   bossName: null,
   bossPhase: 0,
+  heroId: null,
+  gateGuardActive: false,
+  missionWood: 0,
+  missionIron: 0,
+  towersBuilt: 0,
+  trapsBuilt: 0,
+  maxTowerBuilds: 99,
+  maxTrapBuilds: 99,
+  heroAbilityCooldown: 1,
+  usePrepBuildRules: false,
 });
 
 function applyMetaAchievements(save: LocalSaveData): LocalSaveData {
@@ -293,6 +326,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   mapFocusLocationId: null,
   mapUnlockAnnouncement: null,
   pendingMissionId: null,
+  prepMissionId: null,
+  overworldRecruitOffer: null,
   missionReturnScreen: 'world_explore',
   overworldInteract: { prompt: null, poiId: null, poi: null },
   overworldDialog: null,
@@ -304,6 +339,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
   mapHomeScreen: 'world_explore',
 
   setScreen: (screen) => set({ screen }),
+
+  updateSaveFields: (partial) => {
+    const updated = { ...get().save, ...partial };
+    persistSave(updated);
+    set({ save: updated });
+  },
+
+  recruitHero: (heroId) => {
+    const { save } = get();
+    if (save.recruitedHeroes.includes(heroId)) return;
+    const updated = {
+      ...save,
+      recruitedHeroes: [...save.recruitedHeroes, heroId],
+      selectedHeroId: heroId,
+    };
+    persistSave(updated);
+    set({ save: updated, overworldRecruitOffer: null });
+  },
+
+  unlockBlueprint: (blueprintId) => {
+    const { save } = get();
+    if (save.unlockedBlueprints.includes(blueprintId)) return false;
+    const updated = {
+      ...save,
+      unlockedBlueprints: [...save.unlockedBlueprints, blueprintId],
+    };
+    persistSave(updated);
+    set({ save: updated });
+    return true;
+  },
+
+  openMissionPrep: (missionId) => {
+    set({
+      prepMissionId: missionId,
+      screen: 'mission_prep',
+      missionReturnScreen: get().missionReturnScreen,
+    });
+  },
+
+  queueMissionStart: (missionId, returnScreen) => {
+    if (returnScreen) set({ missionReturnScreen: returnScreen });
+    if (isPrepMission(missionId)) {
+      get().openMissionPrep(missionId);
+      return;
+    }
+    get().startMission(missionId, returnScreen ?? get().missionReturnScreen);
+  },
+
+  confirmMissionPrep: (missionId, loadout) => {
+    const save = get().save;
+    const updated = {
+      ...save,
+      selectedHeroId: loadout.heroId,
+      prepUseGateGuard: loadout.gateGuard,
+    };
+    persistSave(updated);
+    set({ save: updated, prepMissionId: null });
+    get().startMission(missionId, get().missionReturnScreen, loadout);
+  },
 
   clearMapFocus: () => set({ mapFocusLocationId: null }),
 
@@ -323,7 +417,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ pendingActBanner: unseenAct, pendingMissionId: missionId, missionReturnScreen: 'world_explore' });
       return;
     }
-    get().startMission(missionId, 'world_explore');
+    get().queueMissionStart(missionId, 'world_explore');
   },
 
   refreshOverworldAfterMission: () => {
@@ -370,11 +464,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  startMission: (missionId, returnScreen) => {
+  startMission: (missionId, returnScreen, loadout) => {
     const save = get().save;
     const missionDef = getMissionById(missionId);
     let playerMaxHp = playerMaxFromSave(save);
     const gateMaxHp = gateMaxFromSave(save);
+    const prepConfig = getMissionPrepConfig(missionId);
+    const usePrep = Boolean(prepConfig);
 
     let updatedSave = save;
     if (save.restBonusActive) {
@@ -404,6 +500,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const isSurvive = missionDef?.type === 'survive';
     const isOasis = missionDef?.type === 'oasis';
 
+    const resolvedLoadout: MissionLoadout = loadout ?? {
+      heroId: save.selectedHeroId,
+      gateGuard: save.prepUseGateGuard,
+    };
+    const heroId =
+      resolvedLoadout.heroId && save.recruitedHeroes.includes(resolvedLoadout.heroId)
+        ? resolvedLoadout.heroId
+        : null;
+
     set({
       screen: 'mission',
       missionReturnScreen: returnScreen ?? get().missionReturnScreen,
@@ -432,6 +537,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         activeBoost: boost,
         damageMultiplier,
         repairMultiplier,
+        goldCollected: prepConfig?.startingGold ?? 0,
+        missionWood: prepConfig?.startingWood ?? 0,
+        missionIron: prepConfig?.startingIron ?? 0,
+        maxTowerBuilds: prepConfig?.maxTowerBuilds ?? 99,
+        maxTrapBuilds: prepConfig?.maxTrapBuilds ?? 99,
+        heroId,
+        gateGuardActive: usePrep ? resolvedLoadout.gateGuard : false,
+        usePrepBuildRules: usePrep,
       },
       lastMissionResult: null,
     });
@@ -992,7 +1105,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistSave(updated);
     set({ save: updated, pendingActBanner: null, pendingMissionId: null });
     if (pendingMissionId) {
-      get().startMission(pendingMissionId, get().missionReturnScreen);
+      get().queueMissionStart(pendingMissionId, get().missionReturnScreen);
     }
   },
 

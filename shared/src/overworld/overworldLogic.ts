@@ -67,8 +67,16 @@ export function isOverworldCellExplored(
   return explored.includes(getOverworldCellKey(regionId, x, y, cellSize));
 }
 
-export function getOverworldQuestHint(save: Pick<LocalSaveData, 'completedMissions'>): string {
+export function getOverworldQuestHint(
+  save: Pick<LocalSaveData, 'completedMissions' | 'recruitedHeroes' | 'unlockedBlueprints'>,
+): string {
   const done = save.completedMissions;
+  if (!save.recruitedHeroes.includes('aisha')) {
+    return 'Visit the Camp Blacksmith — Aisha may join your defense';
+  }
+  if (!save.unlockedBlueprints.includes('spike_trap')) {
+    return 'Search the broken caravan wreck for trap blueprints';
+  }
   if (!done.includes('mission-night-attack')) {
     return 'Walk to Nahran Gate and defend the camp before sunrise';
   }
