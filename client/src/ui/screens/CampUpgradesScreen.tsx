@@ -10,7 +10,7 @@ export function CampUpgradesScreen() {
   return (
     <div className="flex h-full flex-col bg-desert-night text-white">
       <header className="flex items-center justify-between border-b border-white/10 px-8 py-6">
-        <button type="button" onClick={() => { SoundManager.play('click'); setScreen('world_map'); }} className="text-white/60 hover:text-white">
+        <button type="button" onClick={() => { SoundManager.play('click'); setScreen(useGameStore.getState().mapHomeScreen); }} className="text-white/60 hover:text-white">
           ← Back
         </button>
         <h2 className="font-display text-2xl text-desert-gold">Camp Upgrades</h2>

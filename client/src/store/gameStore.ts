@@ -29,6 +29,8 @@ import {
   getNewlyAccessibleLocations,
   cycleBuildChoice,
   isBuildUnlocked,
+  getOverworldRegion,
+  canFastTravelTo,
   type GameSettings,
   type LocalSaveData,
   type MissionType,
@@ -36,12 +38,14 @@ import {
   type BuildChoice,
   type LionMode,
   type ResourceRewards,
+  type OverworldPOI,
 } from '@malik/shared';
 import { loadSave, persistSave, parseImportedSave } from '@/services/saveService';
 import { pushCloudSave, submitScore } from '@/services/apiService';
 
 export type GameScreen =
   | 'main_menu'
+  | 'world_explore'
   | 'world_map'
   | 'mission'
   | 'upgrade'
@@ -63,6 +67,7 @@ interface MissionRuntimeState {
   enemiesRemaining: number;
   betweenWaves: boolean;
   preparing: boolean;
+  awaitingWaveStart: boolean;
   playerHp: number;
   playerMaxHp: number;
   gateHp: number;
@@ -140,9 +145,27 @@ interface GameStore {
   mapUnlockAnnouncement: string[] | null;
   /** Mission to auto-start after act banner dismiss. */
   pendingMissionId: string | null;
+  /** Screen to return to after mission abort/result. */
+  missionReturnScreen: GameScreen;
+  overworldInteract: { prompt: string | null; poiId: string | null; poi: OverworldPOI | null };
+  overworldDialog: { npcId: string; name: string; lines: string[] } | null;
+  overworldMissionOffer: {
+    missionId: string;
+    title: string;
+    brief: string;
+    returnX: number;
+    returnY: number;
+  } | null;
+  overworldCampOpen: boolean;
+  overworldMapOpen: boolean;
+  overworldUnlockToast: string | null;
+  /** Live player position for minimap — updated from Phaser, avoids re-rendering full save every frame. */
+  overworldLivePosition: { x: number; y: number };
+  /** Where sub-screens (inventory, upgrades) return to. */
+  mapHomeScreen: GameScreen;
 
   setScreen: (screen: GameScreen) => void;
-  startMission: (missionId: string) => void;
+  startMission: (missionId: string, returnScreen?: GameScreen) => void;
   abortMission: () => void;
   endMission: (result: Omit<NonNullable<GameStore['lastMissionResult']>, 'missionId' | 'levelsGained' | 'score' | 'isNewBest' | 'elapsedMs' | 'speedBonusGold' | 'newAchievements' | 'missionType' | 'isAmbush' | 'isShrine' | 'isCaravan' | 'isSurvive' | 'isOasis' | 'waterEarned' | 'campaignJustCompleted' | 'inventoryEarned' | 'ngPlusBonusGold' | 'ngPlusBonusXp' | 'unlockedLocationIds'>) => void;
   updateMissionRuntime: (partial: Partial<MissionRuntimeState>) => void;
@@ -179,6 +202,16 @@ interface GameStore {
   showCampIntroIfNeeded: () => void;
   dismissDialog: () => void;
   clearMapFocus: () => void;
+  setOverworldInteract: (payload: GameStore['overworldInteract']) => void;
+  setOverworldDialog: (dialog: GameStore['overworldDialog']) => void;
+  setOverworldMissionOffer: (offer: GameStore['overworldMissionOffer']) => void;
+  setOverworldCampOpen: (open: boolean) => void;
+  dismissOverworldDialog: () => void;
+  acceptOverworldMission: () => void;
+  refreshOverworldAfterMission: () => void;
+  setOverworldMapOpen: (open: boolean) => void;
+  toggleOverworldMap: () => void;
+  fastTravelTo: (poiId: string) => boolean;
 }
 
 const defaultMissionState = (): MissionRuntimeState => ({
@@ -188,6 +221,7 @@ const defaultMissionState = (): MissionRuntimeState => ({
   enemiesRemaining: 0,
   betweenWaves: false,
   preparing: false,
+  awaitingWaveStart: false,
   playerHp: 100,
   playerMaxHp: 100,
   gateHp: 500,
@@ -259,10 +293,68 @@ export const useGameStore = create<GameStore>((set, get) => ({
   mapFocusLocationId: null,
   mapUnlockAnnouncement: null,
   pendingMissionId: null,
+  missionReturnScreen: 'world_explore',
+  overworldInteract: { prompt: null, poiId: null, poi: null },
+  overworldDialog: null,
+  overworldMissionOffer: null,
+  overworldCampOpen: false,
+  overworldMapOpen: false,
+  overworldUnlockToast: null,
+  overworldLivePosition: { x: 520, y: 1280 },
+  mapHomeScreen: 'world_explore',
 
   setScreen: (screen) => set({ screen }),
 
   clearMapFocus: () => set({ mapFocusLocationId: null }),
+
+  setOverworldInteract: (payload) => set({ overworldInteract: payload }),
+  setOverworldDialog: (dialog) => set({ overworldDialog: dialog }),
+  setOverworldMissionOffer: (offer) => set({ overworldMissionOffer: offer }),
+  setOverworldCampOpen: (open) => set({ overworldCampOpen: open }),
+  dismissOverworldDialog: () => set({ overworldDialog: null }),
+
+  acceptOverworldMission: () => {
+    const { overworldMissionOffer } = get();
+    if (!overworldMissionOffer) return;
+    const { missionId } = overworldMissionOffer;
+    set({ overworldMissionOffer: null });
+    const unseenAct = getUnseenActForMission(missionId, get().save.seenActs);
+    if (unseenAct) {
+      set({ pendingActBanner: unseenAct, pendingMissionId: missionId, missionReturnScreen: 'world_explore' });
+      return;
+    }
+    get().startMission(missionId, 'world_explore');
+  },
+
+  refreshOverworldAfterMission: () => {
+    const { lastMissionResult } = get();
+    if (lastMissionResult?.victory && lastMissionResult.unlockedLocationIds.length > 0) {
+      set({ overworldUnlockToast: 'New paths revealed in the desert' });
+      window.setTimeout(() => set({ overworldUnlockToast: null }), 5000);
+    }
+  },
+
+  setOverworldMapOpen: (open) => set({ overworldMapOpen: open }),
+  toggleOverworldMap: () => set((s) => ({ overworldMapOpen: !s.overworldMapOpen })),
+
+  fastTravelTo: (poiId) => {
+    const { save } = get();
+    const regionId = save.overworldPosition.regionId || 'nahran-outskirts';
+    const region = getOverworldRegion(regionId);
+    const poi = region.pois.find((p) => p.id === poiId);
+    if (!poi || !canFastTravelTo(poi, save)) return false;
+    const updated = {
+      ...save,
+      overworldPosition: { regionId, x: poi.x, y: poi.y },
+    };
+    persistSave(updated);
+    set({
+      save: updated,
+      overworldLivePosition: { x: poi.x, y: poi.y },
+      overworldCampOpen: false,
+    });
+    return true;
+  },
 
   abortMission: () => {
     const { save, mission } = get();
@@ -274,11 +366,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       save: updatedSave,
       mission: defaultMissionState(),
-      screen: 'world_map',
+      screen: get().missionReturnScreen,
     });
   },
 
-  startMission: (missionId) => {
+  startMission: (missionId, returnScreen) => {
     const save = get().save;
     const missionDef = getMissionById(missionId);
     let playerMaxHp = playerMaxFromSave(save);
@@ -314,6 +406,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       screen: 'mission',
+      missionReturnScreen: returnScreen ?? get().missionReturnScreen,
       save: updatedSave,
       mission: {
         ...defaultMissionState(),
@@ -699,7 +792,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     updated = applyMetaAchievements(updated);
     persistSave(updated);
     if (get().authEmail) void pushCloudSave(updated).catch(() => {});
-    set({ save: updated, screen: 'world_map', mapUnlockAnnouncement: null });
+    set({ save: updated, screen: 'world_explore', mapUnlockAnnouncement: null });
   },
 
   resetSave: () => {
@@ -729,7 +822,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   loadSaveData: (save) => {
     const merged = mergeSaveData(save);
     persistSave(merged);
-    set({ save: merged });
+    set({
+      save: merged,
+      overworldLivePosition: merged.overworldPosition ?? { x: 520, y: 1280 },
+    });
   },
 
   pullCloudSave: async () => {
@@ -896,7 +992,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     persistSave(updated);
     set({ save: updated, pendingActBanner: null, pendingMissionId: null });
     if (pendingMissionId) {
-      get().startMission(pendingMissionId);
+      get().startMission(pendingMissionId, get().missionReturnScreen);
     }
   },
 

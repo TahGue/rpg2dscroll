@@ -64,7 +64,7 @@ export function PostGameScreen() {
           </button>
           <button
             type="button"
-            onClick={() => { SoundManager.play('click'); setScreen('world_map'); }}
+            onClick={() => { SoundManager.play('click'); setScreen(useGameStore.getState().mapHomeScreen); }}
             className="rounded-lg border border-white/30 px-8 py-3 text-white/80 hover:bg-white/5"
           >
             Continue Exploring

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { MainMenu } from '@/ui/screens/MainMenu';
 import { WorldMap } from '@/ui/screens/WorldMap';
+import { WorldExploreView } from '@/ui/screens/WorldExploreView';
 import { UpgradeScreen } from '@/ui/screens/UpgradeScreen';
 import { CampUpgradesScreen } from '@/ui/screens/CampUpgradesScreen';
 import { RelicUpgradesScreen } from '@/ui/screens/RelicUpgradesScreen';
@@ -22,7 +23,13 @@ export default function App() {
   const authEmail = useGameStore((s) => s.authEmail);
   const pullCloudSave = useGameStore((s) => s.pullCloudSave);
   const musicMode =
-    screen === 'mission' ? 'mission' : screen === 'world_map' ? 'map' : screen === 'main_menu' ? 'menu' : 'none';
+    screen === 'mission'
+      ? 'mission'
+      : screen === 'world_map' || screen === 'world_explore'
+        ? 'map'
+        : screen === 'main_menu'
+          ? 'menu'
+          : 'none';
   useMusic(musicMode);
 
   useEffect(() => {
@@ -33,6 +40,7 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden">
       <ScreenTransition screen={screen}>
         {screen === 'main_menu' && <MainMenu />}
+        {screen === 'world_explore' && <WorldExploreView />}
         {screen === 'world_map' && <WorldMap />}
         {screen === 'upgrade' && <UpgradeScreen />}
         {screen === 'camp_upgrades' && <CampUpgradesScreen />}

@@ -8,7 +8,8 @@ export class PreloadScene extends Phaser.Scene {
   create(): void {
     this.createLoadingBar();
     this.createAllTextures();
-    this.time.delayedCall(400, () => this.scene.start('MissionScene'));
+    const target = (this.registry.get('bootTarget') as string) ?? 'MissionScene';
+    this.time.delayedCall(400, () => this.scene.start(target));
   }
 
   private createLoadingBar(): void {
@@ -39,6 +40,7 @@ export class PreloadScene extends Phaser.Scene {
   private createAllTextures(): void {
     this.createMalikTexture('malik', false);
     this.createMalikTexture('malik_attack', true);
+    this.createMalikOverworldTexture();
     this.createMalikBlockTexture();
     this.createHyenaTexture();
     this.createBanditTexture('sand_bandit', 0xa0522d, 0x654321);
@@ -116,6 +118,25 @@ export class PreloadScene extends Phaser.Scene {
     g.fillStyle(0xff4444, 1);
     g.fillCircle(26, 14, 2);
     g.generateTexture('hyena', 36, 28);
+    g.destroy();
+  }
+
+  private createMalikOverworldTexture(): void {
+    const g = this.make.graphics({ x: 0, y: 0 });
+    g.fillStyle(0xc4783a, 1);
+    g.fillRoundedRect(6, 10, 20, 18, 4);
+    g.fillStyle(0x8b4513, 1);
+    g.fillCircle(16, 8, 7);
+    g.fillStyle(0xf5deb3, 1);
+    g.fillCircle(16, 9, 4);
+    g.fillStyle(0xffffff, 1);
+    g.fillTriangle(10, 4, 22, 4, 16, 0);
+    g.fillStyle(0xcccccc, 1);
+    g.fillRect(20, 12, 3, 14);
+    g.fillStyle(0x5c3317, 1);
+    g.fillRect(8, 26, 5, 4);
+    g.fillRect(18, 26, 5, 4);
+    g.generateTexture('malik_overworld', 32, 32);
     g.destroy();
   }
 

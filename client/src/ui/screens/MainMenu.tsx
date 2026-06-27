@@ -8,7 +8,7 @@ export function MainMenu() {
   const authEmail = useGameStore((s) => s.authEmail);
   const xpProgress = getXpProgress(save.xp, save.level);
 
-  const navigate = (screen: 'world_map' | 'upgrade' | 'camp_upgrades' | 'relic_upgrades' | 'inventory' | 'post_game' | 'settings' | 'login' | 'leaderboard' | 'achievements' | 'lore') => {
+  const navigate = (screen: 'world_explore' | 'world_map' | 'upgrade' | 'camp_upgrades' | 'relic_upgrades' | 'inventory' | 'post_game' | 'settings' | 'login' | 'leaderboard' | 'achievements' | 'lore') => {
     SoundManager.play('click');
     setScreen(screen);
   };
@@ -55,7 +55,8 @@ export function MainMenu() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <MenuButton onClick={() => navigate('world_map')}>Begin Adventure</MenuButton>
+          <MenuButton onClick={() => navigate('world_explore')}>Begin Adventure</MenuButton>
+          <MenuButton onClick={() => navigate('world_map')} variant="secondary">Region Map</MenuButton>
           <MenuButton onClick={() => navigate('upgrade')} variant="secondary">Upgrades</MenuButton>
           <MenuButton onClick={() => navigate('camp_upgrades')} variant="secondary">Camp Upgrades</MenuButton>
           <MenuButton onClick={() => navigate('relic_upgrades')} variant="secondary">Sentinel Relics</MenuButton>
@@ -73,9 +74,9 @@ export function MainMenu() {
         </div>
 
         <p className="mt-12 text-xs text-white/40">
-          Move A/D · Jump W · Attack J · Block K · Shift dodge · U bash · I slash · O bow · H spear · T war cry · G sentinel
+          Explore: WASD move · E interact · Side-scroll missions when you enter gates and oases
         </p>
-        <p className="mt-1 text-[10px] text-white/30">R repair · B build · L roar · Relics unlock advanced skills</p>
+        <p className="mt-1 text-[10px] text-white/30">Combat: A/D move · W jump · J attack · B build · R repair</p>
       </div>
     </div>
   );

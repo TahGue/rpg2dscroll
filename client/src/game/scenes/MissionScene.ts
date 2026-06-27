@@ -16,6 +16,7 @@ import { IronTower } from '../entities/IronTower';
 import { LionDen } from '../entities/LionDen';
 import { Lion } from '../entities/Lion';
 import { WaveManager } from '../systems/WaveManager';
+import { MissionControlBridge } from '../systems/MissionControlBridge';
 import { HazardManager } from '../systems/HazardManager';
 import { EclipseOverlay } from '../systems/EclipseOverlay';
 import { MissionBridge } from '../systems/MissionBridge';
@@ -501,6 +502,13 @@ export class MissionScene extends Phaser.Scene {
       SoundManager.play('click');
       useGameStore.getState().togglePause();
     });
+
+    this.input.keyboard.on('keydown-H', () => {
+      if (this.missionEnded) return;
+      if (!useGameStore.getState().mission.awaitingWaveStart) return;
+      SoundManager.play('wave');
+      MissionControlBridge.requestStartWave();
+    });
   }
 
   private setupEvents(): void {
@@ -582,6 +590,7 @@ export class MissionScene extends Phaser.Scene {
       this.isCaravan && this.caravan ? () => this.caravan!.x : undefined,
     );
     this.waveManager.start();
+    MissionControlBridge.register(() => this.waveManager.beginNextWave());
   }
 
   private showCampBackground(): void {

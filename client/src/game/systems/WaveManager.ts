@@ -30,6 +30,9 @@ export class WaveManager {
   private isSurvive: boolean;
   private isOasis: boolean;
   private rightSpawnX: number;
+  /** Defense missions wait for the player; ambush keeps a short auto timer. */
+  private useManualStart: boolean;
+  private awaitingManualStart = false;
 
   constructor(
     private scene: Phaser.Scene,
@@ -50,6 +53,7 @@ export class WaveManager {
     this.rightSpawnX = rightSpawnX ?? spawnX;
     this.bossKillRequired = mission.requiresBossKill;
     this.statMultiplier = MissionBridge.getNgPlusMultiplier();
+    this.useManualStart = !this.isAmbush;
     scene.events.on('enemy-died', this.onEnemyDied, this);
   }
 
@@ -60,11 +64,15 @@ export class WaveManager {
       this.scheduleNextWave(layout.prepPhaseMs ?? 1200);
       return;
     }
-    MissionBridge.syncPreparing(true);
-    this.showPrepBanner();
-    const layout = getDefenseLayout(this.mission.id, this.mission.type);
-    const prepMs = layout.prepPhaseMs ?? (this.isSurvive ? 5000 : 7000);
-    this.scheduleNextWave(prepMs);
+    this.enterManualPrep(false);
+  }
+
+  /** Called from HUD / horn key when the player is ready for the next wave. */
+  beginNextWave(): void {
+    if (!this.awaitingManualStart || this.ended) return;
+    this.awaitingManualStart = false;
+    MissionBridge.syncAwaitingWaveStart(false);
+    this.startNextWave();
   }
 
   destroy(): void {
@@ -196,10 +204,14 @@ export class WaveManager {
     if (isLastWave) {
       this.onAllWavesComplete();
     } else {
-      MissionBridge.syncWaveBreak(true);
-      this.showWaveBreakBanner(wave.timeBeforeWaveMs);
       this.scene.events.emit('wave-cleared', wave.waveNumber);
-      this.scheduleNextWave(wave.timeBeforeWaveMs);
+      if (this.useManualStart) {
+        this.enterManualPrep(true);
+      } else {
+        MissionBridge.syncWaveBreak(true);
+        this.showWaveBreakBanner(wave.timeBeforeWaveMs);
+        this.scheduleNextWave(wave.timeBeforeWaveMs);
+      }
     }
   }
 
@@ -215,7 +227,11 @@ export class WaveManager {
       this.showHoldBanner();
       this.waveClearScheduled = false;
       this.waveIndex = this.mission.waves.length - 2;
-      this.scheduleNextWave(4000);
+      if (this.useManualStart) {
+        this.enterManualPrep(true);
+      } else {
+        this.scheduleNextWave(4000);
+      }
       return;
     }
 
@@ -281,15 +297,49 @@ export class WaveManager {
     this.scene.time.delayedCall(2500, () => text.destroy());
   }
 
-  private showPrepBanner(): void {
+  private enterManualPrep(betweenWaves: boolean): void {
+    this.waveClearScheduled = false;
+    this.awaitingManualStart = true;
+    MissionBridge.syncAwaitingWaveStart(true);
+    if (betweenWaves) {
+      MissionBridge.syncWaveBreak(true);
+      MissionBridge.syncPreparing(false);
+      this.showManualWaveBreakBanner();
+    } else {
+      MissionBridge.syncPreparing(true);
+      MissionBridge.syncWaveBreak(false);
+      this.showManualPrepBanner();
+    }
+  }
+
+  private showManualPrepBanner(): void {
     const cam = this.scene.cameras.main;
     const text = this.scene.add
-      .text(cam.width / 2, cam.height / 2 - 50, 'Prepare — build & repair!', {
-        fontSize: '24px',
+      .text(cam.width / 2, cam.height / 2 - 50, 'The enemy approaches — prepare the defense!', {
+        fontSize: '22px',
         color: '#88ffaa',
         fontFamily: 'Georgia, serif',
         stroke: '#1a1428',
         strokeThickness: 4,
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(200);
+
+    this.scene.time.delayedCall(5000, () => text.destroy());
+  }
+
+  private showManualWaveBreakBanner(): void {
+    const cam = this.scene.cameras.main;
+    const text = this.scene.add
+      .text(cam.width / 2, cam.height / 2 - 60, 'Wave cleared — rebuild, then sound the horn', {
+        fontSize: '20px',
+        color: '#88ffaa',
+        fontFamily: 'Georgia, serif',
+        stroke: '#1a1428',
+        strokeThickness: 4,
+        align: 'center',
       })
       .setOrigin(0.5)
       .setScrollFactor(0)

@@ -39,6 +39,12 @@ export const LORE_ENTRIES: LoreEntry[] = [
     body: 'Long before Nahran was built, desert warriors called the First Sentinels raised watchtowers and shrines across the dunes. They fought shadow and sand alike, leaving relics that still hum with old power.',
   },
   {
+    id: 'lore-hyena-tracks',
+    title: 'Hyena Trails',
+    category: 'enemy',
+    body: 'Three-toed prints in the night sand mean a pack is circling. Hyenas hunt in silence until they strike — the elders say when the tracks point toward camp, the gate must be manned before moonset.',
+  },
+  {
     id: 'lore-scorpion-nest',
     title: 'Scorpion Nest',
     category: 'enemy',

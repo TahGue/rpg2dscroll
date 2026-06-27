@@ -4,6 +4,7 @@ import { GameManager } from '@/game/GameManager';
 import { MissionHUD } from '@/ui/hud/MissionHUD';
 import { TouchControls } from '@/ui/hud/TouchControls';
 import { InputBridge } from '@/game/systems/InputBridge';
+import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
 
 export function MissionView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,6 +24,7 @@ export function MissionView() {
       manager.destroy();
       gameRef.current = null;
       InputBridge.reset();
+      MissionControlBridge.reset();
     };
   }, [missionId]);
 

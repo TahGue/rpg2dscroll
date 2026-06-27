@@ -1,7 +1,8 @@
 import { useGameStore } from '@/store/gameStore';
-import { getBuildDefinition } from '@malik/shared';
+import { getBuildDefinition, getWaveStartHint, getWaveStartLabel } from '@malik/shared';
 import { buildMissionControlHints } from '@/game/utils/controlHints';
 import { SoundManager } from '@/game/systems/SoundManager';
+import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
 
 interface MissionHUDProps {
   onExit: () => void;
@@ -22,6 +23,18 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
     isAmbush: mission.isAmbush,
   });
   const bossPct = mission.bossMaxHp > 0 ? (mission.bossHp / mission.bossMaxHp) * 100 : 0;
+  const waveStartLabel = getWaveStartLabel({
+    currentWave: mission.currentWave,
+    totalWaves: mission.totalWaves,
+    isAmbush: mission.isAmbush,
+    betweenWaves: mission.betweenWaves,
+  });
+  const waveStartHint = getWaveStartHint({
+    currentWave: mission.currentWave,
+    totalWaves: mission.totalWaves,
+    isAmbush: mission.isAmbush,
+    betweenWaves: mission.betweenWaves,
+  });
 
   const playerPct = (mission.playerHp / mission.playerMaxHp) * 100;
   const gatePct = mission.gateMaxHp > 0 ? (mission.gateHp / mission.gateMaxHp) * 100 : 0;
@@ -34,6 +47,11 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
   const handleExit = () => {
     SoundManager.play('click');
     onExit();
+  };
+
+  const handleStartWave = () => {
+    SoundManager.play('wave');
+    MissionControlBridge.requestStartWave();
   };
 
   return (
@@ -115,6 +133,20 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
         )}
       </div>
 
+      {mission.awaitingWaveStart && !mission.isPaused && (
+        <div className="pointer-events-auto absolute inset-x-0 bottom-28 flex flex-col items-center gap-2 px-4 md:bottom-8">
+          <p className="max-w-md text-center text-xs text-cyan-100/90">{waveStartHint}</p>
+          <button
+            type="button"
+            onClick={handleStartWave}
+            className="rounded-xl border-2 border-desert-gold bg-desert-gold/90 px-8 py-3 font-display text-lg font-bold text-desert-night shadow-lg shadow-black/40 transition hover:bg-desert-gold hover:scale-[1.02] active:scale-95"
+          >
+            {waveStartLabel}
+          </button>
+          <p className="text-[10px] text-white/40">Press H to sound the horn</p>
+        </div>
+      )}
+
       <div className="mb-36 flex items-end justify-between text-sm text-white/80 md:mb-0">
         <div className="rounded-lg bg-black/50 px-4 py-2 backdrop-blur">
           <p>
@@ -130,8 +162,11 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           {mission.betweenWaves && (
             <p className="text-xs text-green-300">Break — repair or build</p>
           )}
-          {mission.preparing && (
+          {mission.preparing && !mission.awaitingWaveStart && (
             <p className="text-xs text-cyan-300">Prepare — build & repair!</p>
+          )}
+          {mission.awaitingWaveStart && (
+            <p className="text-xs text-amber-300">Awaiting your signal…</p>
           )}
           {!mission.isAmbush && (
             <p className="text-[10px] text-white/50">

@@ -47,6 +47,10 @@ export function WorldMap() {
   }, [checkInitialActBanner, showCampIntroIfNeeded]);
 
   useEffect(() => {
+    useGameStore.setState({ mapHomeScreen: 'world_map' });
+  }, []);
+
+  useEffect(() => {
     if (mapFocusLocationId) {
       setSelectedId(mapFocusLocationId);
       setMapFocusNode(mapFocusLocationId);
@@ -79,7 +83,7 @@ export function WorldMap() {
       return;
     }
 
-    startMission(mission.id);
+    startMission(mission.id, 'world_map');
   };
 
   const handleCollectResource = (locationId: string) => {
@@ -124,6 +128,7 @@ export function WorldMap() {
       </header>
 
       <div className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-white/5 px-3 py-2 sm:flex-wrap sm:gap-2 sm:px-6">
+        <MapNavBtn label="Explore" onClick={() => { SoundManager.play('click'); setScreen('world_explore'); }} />
         <MapNavBtn label="Camp" onClick={() => { SoundManager.play('click'); setSelectedId('nahran-camp'); setCampOpen(true); }} />
         <MapNavBtn label="Inventory" onClick={() => { SoundManager.play('click'); setScreen('inventory'); }} />
         <MapNavBtn label="Upgrades" onClick={() => { SoundManager.play('click'); setScreen('upgrade'); }} />

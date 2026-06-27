@@ -18,6 +18,12 @@ export interface GameSettings {
   keyBindings: KeyBindings;
 }
 
+export interface OverworldPosition {
+  regionId: string;
+  x: number;
+  y: number;
+}
+
 export interface LocalSaveData {
   version: number;
   gold: number;
@@ -47,6 +53,12 @@ export interface LocalSaveData {
   campaignComplete: boolean;
   settings: GameSettings;
   lastPlayedAt: string;
+  overworldPosition: OverworldPosition;
+  visitedOverworldPOIs: string[];
+  openedOverworldChests: string[];
+  exploredOverworldCells: string[];
+  defeatedOverworldPatrols: string[];
+  completedOverworldEvents: string[];
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -97,6 +109,12 @@ export const DEFAULT_SAVE: LocalSaveData = {
   campaignComplete: false,
   settings: DEFAULT_SETTINGS,
   lastPlayedAt: new Date().toISOString(),
+  overworldPosition: { regionId: 'nahran-outskirts', x: 520, y: 1280 },
+  visitedOverworldPOIs: [],
+  openedOverworldChests: [],
+  exploredOverworldCells: [],
+  defeatedOverworldPatrols: [],
+  completedOverworldEvents: [],
 };
 
 export const SAVE_KEY = 'malik-desert-defense-save';
@@ -132,6 +150,12 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
     campaignComplete: parsed.campaignComplete ?? false,
     seenCampDialog: parsed.seenCampDialog ?? false,
     version: parsed.version ?? DEFAULT_SAVE.version,
+    overworldPosition: parsed.overworldPosition ?? DEFAULT_SAVE.overworldPosition,
+    visitedOverworldPOIs: parsed.visitedOverworldPOIs ?? [],
+    openedOverworldChests: parsed.openedOverworldChests ?? [],
+    exploredOverworldCells: parsed.exploredOverworldCells ?? [],
+    defeatedOverworldPatrols: parsed.defeatedOverworldPatrols ?? [],
+    completedOverworldEvents: parsed.completedOverworldEvents ?? [],
   };
   return {
     ...base,

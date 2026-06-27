@@ -29,6 +29,10 @@ export class MissionBridge {
     useGameStore.getState().updateMissionRuntime({ preparing });
   }
 
+  static syncAwaitingWaveStart(awaitingWaveStart: boolean): void {
+    useGameStore.getState().updateMissionRuntime({ awaitingWaveStart });
+  }
+
   static syncBoss(hp: number, maxHp: number, name: string | null, phase = 0): void {
     useGameStore.getState().updateMissionRuntime({
       bossHp: hp,

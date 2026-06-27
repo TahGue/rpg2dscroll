@@ -13,6 +13,8 @@ function formatTime(ms: number): string {
 export function MissionResultScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const startMission = useGameStore((s) => s.startMission);
+  const missionReturnScreen = useGameStore((s) => s.missionReturnScreen);
+  const refreshOverworldAfterMission = useGameStore((s) => s.refreshOverworldAfterMission);
   const result = useGameStore((s) => s.lastMissionResult);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function MissionResultScreen() {
   }, [result?.missionId, result?.victory, result?.newAchievements.length]);
 
   if (!result) {
-    setScreen('world_map');
+    setScreen(missionReturnScreen);
     return null;
   }
 
@@ -149,27 +151,32 @@ export function MissionResultScreen() {
               ) : (
                 <ActionButton
                   onClick={() => {
-                    const save = useGameStore.getState().save;
                     SoundManager.play('click');
-                    useGameStore.setState({
-                      screen: 'world_map',
-                      mapFocusLocationId: getCurrentMapNodeId(save),
-                      mapUnlockAnnouncement:
-                        result.unlockedLocationIds.length > 0 ? result.unlockedLocationIds : null,
-                    });
+                    if (missionReturnScreen === 'world_explore') {
+                      refreshOverworldAfterMission();
+                      setScreen('world_explore');
+                    } else {
+                      const save = useGameStore.getState().save;
+                      useGameStore.setState({
+                        screen: 'world_map',
+                        mapFocusLocationId: getCurrentMapNodeId(save),
+                        mapUnlockAnnouncement:
+                          result.unlockedLocationIds.length > 0 ? result.unlockedLocationIds : null,
+                      });
+                    }
                   }}
                 >
-                  Continue to Map
+                  {missionReturnScreen === 'world_explore' ? 'Return to Desert' : 'Continue to Map'}
                 </ActionButton>
               )}
             </>
           ) : (
             <>
-              <ActionButton onClick={() => setScreen('world_map')} variant="secondary">
-                Map
+              <ActionButton onClick={() => setScreen(missionReturnScreen)} variant="secondary">
+                {missionReturnScreen === 'world_explore' ? 'Desert' : 'Map'}
               </ActionButton>
               <ActionButton
-                onClick={() => result.missionId && startMission(result.missionId)}
+                onClick={() => result.missionId && startMission(result.missionId, missionReturnScreen)}
               >
                 Retry
               </ActionButton>
