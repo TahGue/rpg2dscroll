@@ -5,7 +5,7 @@ describe('missionPrep', () => {
   it('identifies Nahran prep missions', () => {
     expect(isPrepMission('mission-night-attack')).toBe(true);
     expect(isPrepMission('mission-scorpion-nest')).toBe(true);
-    expect(isPrepMission('mission-shadow-emir')).toBe(false);
+    expect(isPrepMission('mission-shadow-emir')).toBe(true);
   });
 
   it('returns budgets for Night Attack', () => {
@@ -27,9 +27,10 @@ describe('missionPrep', () => {
     expect(cfg?.startingIron).toBe(12);
   });
 
-  it('returns prep config for Black Eclipse Gate', () => {
-    expect(isPrepMission('mission-black-eclipse')).toBe(true);
-    expect(getMissionPrepConfig('mission-black-eclipse')?.startingGold).toBe(250);
+  it('returns finale prep budget for Shadow Emir', () => {
+    const cfg = getMissionPrepConfig('mission-shadow-emir');
+    expect(cfg?.startingGold).toBe(300);
+    expect(cfg?.maxTowerBuilds).toBe(4);
   });
 
   it('enforces tower and trap slot limits', () => {

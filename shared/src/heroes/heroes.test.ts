@@ -18,6 +18,10 @@ describe('pickDefaultHeroForMission', () => {
     expect(pickDefaultHeroForMission('mission-black-eclipse', ['aisha', 'hamza'])).toBe('aisha');
   });
 
+  it('prefers Salim for Shadow Emir finale', () => {
+    expect(pickDefaultHeroForMission('mission-shadow-emir', ['aisha', 'salim'])).toBe('salim');
+  });
+
   it('falls back to first recruited hero', () => {
     expect(pickDefaultHeroForMission('mission-silent-oasis', ['aisha'])).toBe('aisha');
   });

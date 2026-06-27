@@ -69,9 +69,15 @@ export function isOverworldCellExplored(
 }
 
 export function getOverworldQuestHint(
-  save: Pick<LocalSaveData, 'completedMissions' | 'recruitedHeroes' | 'unlockedBlueprints' | 'visitedOverworldRegions'>,
+  save: Pick<
+    LocalSaveData,
+    'completedMissions' | 'recruitedHeroes' | 'unlockedBlueprints' | 'visitedOverworldRegions' | 'campaignComplete'
+  >,
 ): string {
   const done = save.completedMissions;
+  if (save.campaignComplete) {
+    return 'The desert is saved — begin New Game+ from camp or the main menu';
+  }
   if (!save.recruitedHeroes.includes('aisha')) {
     return 'Visit the Camp Blacksmith — Aisha may join your defense';
   }
@@ -99,6 +105,9 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-broken-watchtower')) {
     return 'Follow Sentinel Road east to the Broken Watchtower';
   }
+  if (!save.recruitedHeroes.includes('salim')) {
+    return 'Recruit Salim the Sentinel Keeper at the shrine';
+  }
   if (!done.includes('mission-shrine-sanctum')) {
     return 'Enter the Shrine of the First Sentinels and claim a relic';
   }
@@ -117,7 +126,7 @@ export function getOverworldQuestHint(
   if (!done.includes('mission-bandit-road')) {
     return 'Optional: clear Bandit Road ambushes for gold and leather';
   }
-  return 'Explore the ruins — Black Eclipse Gate awaits beyond the shrine';
+  return 'Explore the desert — optional roads and caches remain';
 }
 
 export interface OverworldFastTravelDestination {

@@ -27,6 +27,7 @@ describe('ngPlus scaling', () => {
       collectedResources: ['wood-grove'],
       upgrades: { ...DEFAULT_SAVE.upgrades, sword_damage: 3 },
       campaignComplete: true,
+      recruitedHeroes: ['aisha', 'salim'],
     };
     const next = applyNgPlusReset(save);
     expect(next.ngPlusLevel).toBe(2);
@@ -35,5 +36,9 @@ describe('ngPlus scaling', () => {
     expect(next.collectedResources).toEqual([]);
     expect(next.upgrades.sword_damage).toBe(3);
     expect(next.campaignComplete).toBe(true);
+    expect(next.overworldPosition.regionId).toBe('nahran-outskirts');
+    expect(next.visitedOverworldRegions).toEqual(['nahran-outskirts']);
+    expect(next.exploredOverworldCells).toEqual([]);
+    expect(next.recruitedHeroes).toEqual(['aisha', 'salim']);
   });
 });

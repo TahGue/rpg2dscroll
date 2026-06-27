@@ -15,5 +15,12 @@ export function applyNgPlusReset(save: LocalSaveData): LocalSaveData {
     restBonusActive: false,
     missionBoost: null,
     campaignComplete: true,
+    overworldPosition: { regionId: 'nahran-outskirts', x: 520, y: 1280 },
+    visitedOverworldPOIs: [],
+    openedOverworldChests: [],
+    exploredOverworldCells: [],
+    defeatedOverworldPatrols: [],
+    completedOverworldEvents: [],
+    visitedOverworldRegions: ['nahran-outskirts'],
   };
 }

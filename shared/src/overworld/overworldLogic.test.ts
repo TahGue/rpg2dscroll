@@ -179,11 +179,23 @@ describe('overworld logic', () => {
         'mission-broken-watchtower',
         'mission-shrine-sanctum',
       ] as string[],
-      recruitedHeroes: ['aisha', 'yusuf', 'hamza'],
+      recruitedHeroes: ['aisha', 'yusuf', 'hamza', 'salim'],
       unlockedBlueprints: ['arrow_tower', 'spike_trap', 'iron_tower'],
       visitedOverworldRegions: ['nahran-outskirts', 'scorpion-valley'],
     };
     expect(getOverworldQuestHint(save)).toContain('Black Eclipse Rim');
+  });
+
+  it('hints NG+ after campaign complete', () => {
+    const save = {
+      ...DEFAULT_SAVE,
+      completedMissions: ['mission-shadow-emir'],
+      campaignComplete: true,
+      recruitedHeroes: ['aisha'],
+      unlockedBlueprints: ['arrow_tower'],
+      visitedOverworldRegions: ['nahran-outskirts'],
+    };
+    expect(getOverworldQuestHint(save)).toContain('New Game+');
   });
 
   it('lists eclipse outpost for fast travel', () => {

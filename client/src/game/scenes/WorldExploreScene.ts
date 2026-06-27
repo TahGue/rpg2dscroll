@@ -330,6 +330,16 @@ export class WorldExploreScene extends Phaser.Scene {
             break;
           }
         }
+        if (poi.npcId === 'sentinel_keeper') {
+          const save = useGameStore.getState().save;
+          if (
+            !save.recruitedHeroes.includes('salim') &&
+            save.completedMissions.includes('mission-broken-watchtower')
+          ) {
+            useGameStore.setState({ overworldRecruitOffer: { heroId: 'salim' } });
+            break;
+          }
+        }
         const dialog = poi.npcId ? getOverworldNpcDialogue(poi.npcId) : undefined;
         if (dialog) OverworldBridge.openNpcDialog(dialog.id, dialog.lines, dialog.name);
         break;
@@ -508,6 +518,8 @@ export class WorldExploreScene extends Phaser.Scene {
       this.add.text(1680, 780, 'SENTINEL', { fontSize: '9px', color: '#aa8866' }).setOrigin(0.5).setDepth(5);
       this.add.circle(1820, 960, 28, 0x8866cc, 0.4).setDepth(4);
       this.add.text(1820, 920, 'SHRINE', { fontSize: '9px', color: '#bbaadd' }).setOrigin(0.5).setDepth(5);
+      this.add.circle(1760, 880, 20, 0x6688cc, 0.45).setDepth(4);
+      this.add.text(1760, 850, 'KEEPER', { fontSize: '8px', color: '#99bbee' }).setOrigin(0.5).setDepth(5);
     } else {
       this.add.image(480, 1220, 'dune_mid').setOrigin(0.5, 1).setTint(0x8b6914).setScale(1.2);
       this.add.image(1100, 500, 'palm_tree').setOrigin(0.5, 1).setScale(1.4).setDepth(3);

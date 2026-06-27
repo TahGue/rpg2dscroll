@@ -50,6 +50,15 @@ export const OVERWORLD_NPCS: Record<string, OverworldNpcDialogue> = {
       'Beyond lies the Shadow Emir\'s fortress. Hold the Black Eclipse Gate first.',
     ],
   },
+  sentinel_keeper: {
+    id: 'sentinel_keeper',
+    name: 'Salim the Sentinel Keeper',
+    lines: [
+      'The First Sentinels built these stones to hold back the dark. I keep their rites alive.',
+      'Stand with me at the shrine — my ward will mend any gate you defend.',
+      'When the eclipse comes, you will need every sentinel blessing you can earn.',
+    ],
+  },
 };
 
 export function getOverworldNpcDialogue(npcId: string): OverworldNpcDialogue | undefined {

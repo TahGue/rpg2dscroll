@@ -36,6 +36,7 @@ import {
   pickDefaultHeroForMission,
   applyDefenseSkillPrepBonus,
   getWorldEvent,
+  getHero,
   getDefenseSkillCost,
   DEFENSE_SKILLS,
   getBlueprintUnlockMessage,
@@ -570,6 +571,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       resolvedLoadout.heroId && save.recruitedHeroes.includes(resolvedLoadout.heroId)
         ? resolvedLoadout.heroId
         : null;
+    const activeHero = heroId ? getHero(heroId) : undefined;
+    let resolvedGateMaxHp = isAmbush ? 0 : gateMaxHp;
+    if (!isAmbush && activeHero?.gateMaxHpMult) {
+      resolvedGateMaxHp = Math.round(resolvedGateMaxHp * activeHero.gateMaxHpMult);
+    }
 
     set({
       screen: 'mission',
@@ -594,8 +600,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         missionType: missionDef?.type ?? 'gate_defense',
         playerMaxHp,
         playerHp: playerMaxHp,
-        gateMaxHp: isAmbush ? 0 : gateMaxHp,
-        gateHp: isAmbush ? 0 : gateMaxHp,
+        gateMaxHp: resolvedGateMaxHp,
+        gateHp: resolvedGateMaxHp,
         activeBoost: boost,
         damageMultiplier,
         repairMultiplier,
@@ -967,7 +973,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     updated = applyMetaAchievements(updated);
     persistSave(updated);
     if (get().authEmail) void pushCloudSave(updated).catch(() => {});
-    set({ save: updated, screen: 'world_explore', mapUnlockAnnouncement: null });
+    set({
+      save: updated,
+      screen: 'world_explore',
+      mapUnlockAnnouncement: null,
+      overworldLivePosition: { x: 520, y: 1280 },
+      overworldUnlockToast: `New Game+ ${updated.ngPlusLevel} — the desert awaits anew`,
+    });
+    window.setTimeout(() => set({ overworldUnlockToast: null }), 5500);
   },
 
   resetSave: () => {

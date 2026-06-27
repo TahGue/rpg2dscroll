@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getUnseenActForMission, getAllFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent } from '@malik/shared';
+import { getUnseenActForMission, getAllFastTravelDestinations, getOverworldRegion, SHOP_ITEMS, getHero, AISHA, getWorldEvent, getNgPlusRewardMultiplier } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { WorldExploreManager } from '@/game/WorldExploreManager';
 import { OverworldBridge } from '@/game/systems/OverworldBridge';
@@ -40,6 +40,7 @@ export function WorldExploreView() {
   const mapOpen = useGameStore((s) => s.overworldMapOpen);
   const setOverworldMapOpen = useGameStore((s) => s.setOverworldMapOpen);
   const fastTravelTo = useGameStore((s) => s.fastTravelTo);
+  const startNGPlus = useGameStore((s) => s.startNGPlus);
   const recruitOffer = useGameStore((s) => s.overworldRecruitOffer);
   const recruitHero = useGameStore((s) => s.recruitHero);
   const eventChoice = useGameStore((s) => s.overworldEventChoice);
@@ -167,6 +168,18 @@ export function WorldExploreView() {
           onRelics={() => { setOverworldCampOpen(false); navigate('relic_upgrades'); }}
           onInventory={() => { setOverworldCampOpen(false); navigate('inventory'); }}
           onLore={() => { setOverworldCampOpen(false); navigate('lore'); }}
+          onStartNGPlus={() => {
+            const ngLevel = save.ngPlusLevel + 1;
+            const bonusGold = 100 * ngLevel;
+            if (
+              window.confirm(
+                `Begin New Game+ ${ngLevel}? Overworld progress resets, enemies grow stronger, heroes and upgrades are kept (+${bonusGold} gold).`,
+              )
+            ) {
+              SoundManager.play('click');
+              startNGPlus();
+            }
+          }}
         />
       )}
 
@@ -396,6 +409,7 @@ function CampOverlay({
   onRelics,
   onInventory,
   onLore,
+  onStartNGPlus,
 }: {
   regionId: string;
   onClose: () => void;
@@ -407,10 +421,12 @@ function CampOverlay({
   onRelics: () => void;
   onInventory: () => void;
   onLore: () => void;
+  onStartNGPlus: () => void;
 }) {
   const save = useGameStore((s) => s.save);
   const region = getOverworldRegion(regionId);
   const travelPoints = getAllFastTravelDestinations(save);
+  const rewardMult = getNgPlusRewardMultiplier(save.ngPlusLevel);
   const campTitle =
     region.id === 'scorpion-valley'
       ? 'Valley Camp'
@@ -466,6 +482,21 @@ function CampOverlay({
           <OverlayBtn onClick={onInventory} className="border-blue-400/50 text-blue-200">Inventory</OverlayBtn>
           <OverlayBtn onClick={onLore} className="border-purple-400/50 text-purple-200">Desert Lore</OverlayBtn>
         </div>
+        {save.campaignComplete && (
+          <div className="mb-4 rounded-lg border border-amber-400/40 bg-amber-950/25 p-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-300">New Game+</p>
+            <p className="mb-3 text-xs text-white/60">
+              NG+ {save.ngPlusLevel} · reward ×{rewardMult.toFixed(1)} · replay the adventure with kept heroes and upgrades
+            </p>
+            <button
+              type="button"
+              onClick={() => { SoundManager.play('click'); onStartNGPlus(); }}
+              className="w-full rounded-lg border border-amber-400/50 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/10"
+            >
+              Begin New Game+ (+{100 * (save.ngPlusLevel + 1)} gold)
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => { SoundManager.play('click'); onClose(); }}

@@ -68,6 +68,8 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
         return 'Recruit at Water Keeper after Night Attack';
       case 'hamza':
         return 'Recruit at Valley Camp in Scorpion Valley';
+      case 'salim':
+        return 'Recruit at the Sentinel Shrine after the Watchtower';
       default:
         return 'Not yet recruited';
     }

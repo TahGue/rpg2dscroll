@@ -13,6 +13,8 @@ export interface HeroDefinition {
   arrowTowerFireRateMult?: number;
   /** Passive: multiply gate/well regen and repair effectiveness. */
   supportHealMult?: number;
+  /** Passive: multiply objective max HP when this hero is assigned. */
+  gateMaxHpMult?: number;
   activeCooldownMs: number;
   activeDamage: number;
   activeRange: number;
@@ -68,10 +70,28 @@ export const HAMZA: HeroDefinition = {
   activeRange: 480,
 };
 
+export const SALIM: HeroDefinition = {
+  id: 'salim',
+  name: 'Salim',
+  title: 'Sentinel Keeper',
+  region: 'sentinel-shrine',
+  role: 'Fortification support',
+  passiveDescription: 'Gate and shrine objectives start with 10% more HP.',
+  activeDescription: 'Channels sentinel rites to restore the defended objective.',
+  activeName: 'Sentinel Ward',
+  supportHealMult: 1.15,
+  gateMaxHpMult: 1.1,
+  activeCooldownMs: 15000,
+  activeDamage: 0,
+  activeRange: 200,
+  activeHeal: 110,
+};
+
 export const HEROES: Record<string, HeroDefinition> = {
   aisha: AISHA,
   yusuf: YUSUF,
   hamza: HAMZA,
+  salim: SALIM,
 };
 
 export const MISSION_HERO_PREFERENCE: Partial<Record<PrepMissionId, string>> = {
@@ -79,8 +99,9 @@ export const MISSION_HERO_PREFERENCE: Partial<Record<PrepMissionId, string>> = {
   'mission-silent-oasis': 'yusuf',
   'mission-scorpion-nest': 'hamza',
   'mission-broken-watchtower': 'hamza',
-  'mission-shrine-sanctum': 'yusuf',
+  'mission-shrine-sanctum': 'salim',
   'mission-black-eclipse': 'aisha',
+  'mission-shadow-emir': 'salim',
 };
 
 export function getHero(id: string): HeroDefinition | undefined {

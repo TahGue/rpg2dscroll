@@ -7,6 +7,7 @@ export const PREP_MISSION_IDS = [
   'mission-broken-watchtower',
   'mission-shrine-sanctum',
   'mission-black-eclipse',
+  'mission-shadow-emir',
 ] as const;
 
 export type PrepMissionId = (typeof PREP_MISSION_IDS)[number];
@@ -60,6 +61,13 @@ export const MISSION_PREP_CONFIGS: Record<PrepMissionId, MissionPrepConfig> = {
     startingWood: 12,
     startingIron: 15,
     maxTowerBuilds: 3,
+    maxTrapBuilds: 4,
+  },
+  'mission-shadow-emir': {
+    startingGold: 300,
+    startingWood: 14,
+    startingIron: 18,
+    maxTowerBuilds: 4,
     maxTrapBuilds: 4,
   },
 };

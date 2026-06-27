@@ -117,6 +117,16 @@ export const SCORPION_VALLEY: OverworldRegion = {
       revealAfterMission: 'mission-broken-watchtower',
       unlockAfterMission: 'mission-broken-watchtower',
     },
+    {
+      id: 'poi-sentinel-keeper',
+      kind: 'npc',
+      x: 1760,
+      y: 880,
+      radius: 55,
+      label: 'Salim the Sentinel Keeper',
+      npcId: 'sentinel_keeper',
+      revealAfterMission: 'mission-broken-watchtower',
+    },
   ],
   patrols: [
     {

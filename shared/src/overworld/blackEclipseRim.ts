@@ -100,6 +100,23 @@ export const BLACK_ECLIPSE_RIM: OverworldRegion = {
       missionId: 'mission-black-eclipse',
       ambushBrief: 'Wraiths drift through the eclipse shadow. Cut through and reach the gate before the vanguard arrives.',
       revealAfterMission: 'mission-shrine-sanctum',
+      disableAfterMission: 'mission-black-eclipse',
+    },
+    {
+      id: 'patrol-shadow-vanguard',
+      label: 'Iron Vanguard',
+      texture: 'sand_bandit',
+      path: [
+        { x: 1320, y: 680 },
+        { x: 1420, y: 640 },
+        { x: 1520, y: 680 },
+        { x: 1420, y: 720 },
+      ],
+      speed: 48,
+      touchRadius: 44,
+      missionId: 'mission-shadow-emir',
+      ambushBrief: 'The Emir\'s vanguard blocks the fortress road. Break through before the eclipse deepens.',
+      revealAfterMission: 'mission-black-eclipse',
     },
   ],
 };

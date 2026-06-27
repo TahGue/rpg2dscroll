@@ -547,6 +547,12 @@ export class MissionScene extends Phaser.Scene {
       this.caravan?.repair(Math.round(amount * 0.55));
       this.gateGuard?.heal(Math.round(amount * 0.35));
     });
+    this.events.on('hero-sentinel-ward', (amount: number) => {
+      this.gate?.repair(amount);
+      this.caravan?.repair(Math.round(amount * 0.85));
+      this.player.heal(Math.round(amount * 0.2));
+      this.gateGuard?.heal(Math.round(amount * 0.3));
+    });
     this.events.on('barricade-destroyed', () => this.syncEnemyBarricades());
     this.events.on('boss-summon', this.onBossSummon);
     this.events.on('waves-cleared', (data: { goldEarned: number; xpEarned: number }) => {

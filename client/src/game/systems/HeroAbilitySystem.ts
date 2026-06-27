@@ -41,6 +41,13 @@ export class HeroAbilitySystem {
       return true;
     }
 
+    if (heroId === 'salim' && hero.activeHeal) {
+      this.sentinelWard(playerX, playerY, hero.activeHeal);
+      this.lastUsed = now;
+      MissionBridge.syncHeroAbilityCooldown(0);
+      return true;
+    }
+
     return false;
   }
 
@@ -131,6 +138,33 @@ export class HeroAbilitySystem {
       .text(playerX + dir * 80, lineY - 70, 'BURNING LINE', {
         fontSize: '16px',
         color: '#ff8844',
+        fontFamily: 'Georgia, serif',
+        stroke: '#1a1428',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(200);
+    this.scene.time.delayedCall(900, () => banner.destroy());
+  }
+
+  private sentinelWard(playerX: number, playerY: number, amount: number): void {
+    SoundManager.play('click');
+    const pillar = this.scene.add
+      .rectangle(playerX, playerY - 40, 36, 90, 0x88aacc, 0.55)
+      .setDepth(14);
+    this.scene.tweens.add({
+      targets: pillar,
+      alpha: 0,
+      scaleY: 1.4,
+      duration: 800,
+      onComplete: () => pillar.destroy(),
+    });
+    this.scene.events.emit('hero-sentinel-ward', amount);
+
+    const banner = this.scene.add
+      .text(playerX, playerY - 100, 'SENTINEL WARD', {
+        fontSize: '16px',
+        color: '#aaccff',
         fontFamily: 'Georgia, serif',
         stroke: '#1a1428',
         strokeThickness: 3,
