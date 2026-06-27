@@ -52,6 +52,7 @@ import {
   type LionMode,
   type BattlePost,
   type DefenderPost,
+  type DefenderChoice,
   type ResourceRewards,
   type OverworldPOI,
 } from '@malik/shared';
@@ -123,6 +124,7 @@ interface MissionRuntimeState {
   bossPhase: number;
   heroId: string | null;
   gateGuardActive: boolean;
+  defenderId: DefenderChoice;
   heroPost: BattlePost;
   defenderPost: DefenderPost;
   missionWood: number;
@@ -232,7 +234,7 @@ interface GameStore {
   setSelectedBuild: (build: BuildChoice) => void;
   cycleBuildInMission: () => void;
   setLionMode: (mode: LionMode) => void;
-  setMissionPosts: (posts: { heroPost?: BattlePost; defenderPost?: DefenderPost }) => void;
+  setMissionPosts: (posts: { heroPost?: BattlePost; defenderPost?: DefenderPost; defenderId?: DefenderChoice }) => void;
   startNGPlus: () => void;
   resetSave: () => void;
   togglePause: () => void;
@@ -313,6 +315,7 @@ const defaultMissionState = (): MissionRuntimeState => ({
   bossPhase: 0,
   heroId: null,
   gateGuardActive: false,
+  defenderId: 'gate_guard',
   heroPost: 'gate',
   defenderPost: 'none',
   missionWood: 0,
@@ -437,12 +440,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       loadout.defenderPost ??
       (loadout.gateGuard === false ? 'none' : loadout.gateGuard ? 'gate' : save.prepDefenderPost);
     const heroPost: BattlePost = loadout.heroPost ?? save.prepHeroPost;
+    const defenderId: DefenderChoice = loadout.defenderId ?? save.prepDefenderId;
     const updated = {
       ...save,
       selectedHeroId: loadout.heroId,
       prepUseGateGuard: defenderPost !== 'none',
       prepHeroPost: heroPost,
       prepDefenderPost: defenderPost,
+      prepDefenderId: defenderId,
     };
     persistSave(updated);
     set({ save: updated, prepMissionId: null });
@@ -450,6 +455,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...loadout,
       heroPost,
       defenderPost,
+      defenderId,
     });
   },
 
@@ -626,6 +632,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gateGuard: save.prepUseGateGuard,
       heroPost: save.prepHeroPost,
       defenderPost: save.prepDefenderPost,
+      defenderId: save.prepDefenderId,
     };
     const defenderPost: DefenderPost =
       resolvedLoadout.defenderPost ??
@@ -635,6 +642,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ? 'gate'
           : save.prepDefenderPost);
     const heroPost: BattlePost = resolvedLoadout.heroPost ?? save.prepHeroPost;
+    const defenderId: DefenderChoice = resolvedLoadout.defenderId ?? save.prepDefenderId;
     const overworldPatrolId = get().pendingOverworldPatrolId;
     if (overworldPatrolId) {
       set({ pendingOverworldPatrolId: null });
@@ -684,6 +692,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         maxTrapBuilds: prepConfig?.maxTrapBuilds ?? 99,
         heroId,
         gateGuardActive: usePrep ? defenderPost !== 'none' : false,
+        defenderId,
         heroPost: usePrep ? heroPost : 'gate',
         defenderPost: usePrep ? defenderPost : 'none',
         usePrepBuildRules: usePrep,
@@ -1061,10 +1070,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!mission.usePrepBuildRules || mission.isAmbush) return;
     const heroPost = posts.heroPost ?? mission.heroPost;
     const defenderPost = posts.defenderPost ?? mission.defenderPost;
+    const defenderId = posts.defenderId ?? mission.defenderId;
     const updatedSave = {
       ...save,
       prepHeroPost: heroPost,
       prepDefenderPost: defenderPost,
+      prepDefenderId: defenderId,
       prepUseGateGuard: defenderPost !== 'none',
     };
     persistSave(updatedSave);
@@ -1074,6 +1085,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ...mission,
         heroPost,
         defenderPost,
+        defenderId,
         gateGuardActive: defenderPost !== 'none',
       },
     });

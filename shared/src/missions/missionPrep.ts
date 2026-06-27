@@ -1,4 +1,6 @@
+import { getBuildDefinition } from '../build/buildDefinitions';
 import type { BuildChoice } from '../types/save';
+import type { DefenderChoice } from '../defenders/defenders';
 import type { BattlePost, DefenderPost } from './battlePosts';
 
 export const PREP_MISSION_IDS = [
@@ -95,6 +97,7 @@ export interface MissionLoadout {
   gateGuard?: boolean;
   heroPost?: BattlePost;
   defenderPost?: DefenderPost;
+  defenderId?: DefenderChoice;
 }
 
 export function isPrepMission(missionId: string): missionId is PrepMissionId {
@@ -107,11 +110,11 @@ export function getMissionPrepConfig(missionId: string): MissionPrepConfig | nul
 }
 
 export function isTowerBuild(id: string): boolean {
-  return id === 'arrow_tower' || id === 'iron_tower';
+  return getBuildDefinition(id)?.role === 'tower';
 }
 
 export function isTrapBuild(id: string): boolean {
-  return id === 'spike_trap';
+  return getBuildDefinition(id)?.role === 'trap';
 }
 
 export function canPlaceBuildType(

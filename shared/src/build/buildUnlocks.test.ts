@@ -26,17 +26,28 @@ describe('buildUnlocks', () => {
   it('unlocks barricade after Red Dune Pass', () => {
     const ctx = { ...baseCtx, completedMissions: ['mission-red-dune-pass'] };
     expect(isBuildUnlocked('barricade', ctx)).toBe(true);
+    expect(isBuildUnlocked('fire_tower', ctx)).toBe(true);
+    expect(isBuildUnlocked('fire_pot', ctx)).toBe(true);
     expect(isBuildUnlocked('iron_tower', ctx)).toBe(false);
   });
 
   it('unlocks repair station after Silent Oasis', () => {
     const ctx = { ...baseCtx, completedMissions: ['mission-silent-oasis'] };
     expect(isBuildUnlocked('repair_station', ctx)).toBe(true);
+    expect(isBuildUnlocked('water_tower', ctx)).toBe(true);
+    expect(isBuildUnlocked('water_slow_trap', ctx)).toBe(true);
   });
 
   it('unlocks iron tower after Broken Watchtower', () => {
     const ctx = { ...baseCtx, completedMissions: ['mission-broken-watchtower'] };
     expect(isBuildUnlocked('iron_tower', ctx)).toBe(true);
+    expect(isBuildUnlocked('ballista', ctx)).toBe(true);
+  });
+
+  it('unlocks poison, wall, and relic tech in late regions', () => {
+    expect(isBuildUnlocked('poison_trap', { ...baseCtx, completedMissions: ['mission-scorpion-nest'] })).toBe(true);
+    expect(isBuildUnlocked('relic_tower', { ...baseCtx, completedMissions: ['mission-shrine-sanctum'] })).toBe(true);
+    expect(isBuildUnlocked('rolling_stone', { ...baseCtx, completedMissions: ['mission-black-eclipse'] })).toBe(true);
   });
 
   it('unlocks lion den with lion and camp upgrades', () => {
@@ -51,13 +62,13 @@ describe('buildUnlocks', () => {
     };
     expect(cycleBuildChoice('arrow_tower', ctx)).toBe('spike_trap');
     expect(cycleBuildChoice('spike_trap', ctx)).toBe('barricade');
-    expect(cycleBuildChoice('barricade', ctx)).toBe('repair_station');
-    expect(cycleBuildChoice('repair_station', ctx)).toBe('arrow_tower');
+    expect(cycleBuildChoice('barricade', ctx)).toBe('fire_tower');
   });
 
   it('maps build unlocks to missions', () => {
-    expect(getBuildUnlocksGrantedByMission('mission-red-dune-pass')).toEqual(['barricade']);
-    expect(getBuildUnlocksGrantedByMission('mission-silent-oasis')).toEqual(['repair_station']);
+    expect(getBuildUnlocksGrantedByMission('mission-red-dune-pass')).toContain('fire_tower');
+    expect(getBuildUnlocksGrantedByMission('mission-silent-oasis')).toContain('water_tower');
+    expect(getBuildUnlocksGrantedByMission('mission-shrine-sanctum')).toContain('relic_tower');
   });
 
   it('announces build unlock labels', () => {

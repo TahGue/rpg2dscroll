@@ -9,6 +9,8 @@ import { Barricade } from './Barricade';
 import { RepairStation } from './RepairStation';
 import { IronTower } from './IronTower';
 import { LionDen } from './LionDen';
+import { SpecialTower } from './SpecialTower';
+import { SpecialTrap } from './SpecialTrap';
 import type { Player } from './Player';
 
 export type BuiltStructure =
@@ -17,7 +19,9 @@ export type BuiltStructure =
   | Barricade
   | RepairStation
   | IronTower
-  | LionDen;
+  | LionDen
+  | SpecialTower
+  | SpecialTrap;
 
 export class BuildSocket extends Phaser.GameObjects.Container {
   private built = false;
@@ -129,10 +133,26 @@ export class BuildSocket extends Phaser.GameObjects.Container {
     MissionBridge.recordBuildPlaced(build.id);
 
     switch (build.id) {
+      case 'fire_tower':
+      case 'water_tower':
+      case 'relic_tower':
+      case 'ballista':
+        return new SpecialTower(this.scene, this.x, this.y, build.id);
       case 'spike_trap':
         return new SpikeTrap(this.scene, this.x, this.y);
+      case 'fire_pot':
+      case 'water_slow_trap':
+      case 'poison_trap':
+      case 'sand_pit':
+      case 'light_trap':
+      case 'rolling_stone':
+        return new SpecialTrap(this.scene, this.x, this.y, build.id);
       case 'barricade':
-        return new Barricade(this.scene, this.x, this.y);
+      case 'reinforced_wall':
+      case 'stone_wall':
+      case 'spiked_wall':
+      case 'relic_wall':
+        return new Barricade(this.scene, this.x, this.y, build.id);
       case 'repair_station':
         return new RepairStation(this.scene, this.x, this.y);
       case 'iron_tower':

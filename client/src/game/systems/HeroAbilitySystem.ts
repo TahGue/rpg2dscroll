@@ -18,7 +18,8 @@ export class HeroAbilitySystem {
     if (!hero) return false;
 
     const now = this.scene.time.now;
-    if (now - this.lastUsed < hero.activeCooldownMs) return false;
+    const cooldownMs = Math.round(hero.activeCooldownMs * MissionBridge.getHeroCooldownMultiplier());
+    if (now - this.lastUsed < cooldownMs) return false;
 
     if (heroId === 'aisha') {
       this.fireArrowRain(playerX, playerY, facing, hero.activeRange, hero.activeDamage, enemies);
@@ -56,7 +57,7 @@ export class HeroAbilitySystem {
     const hero = getHero(heroId);
     if (!hero) return 1;
     const elapsed = this.scene.time.now - this.lastUsed;
-    return Math.min(1, elapsed / hero.activeCooldownMs);
+    return Math.min(1, elapsed / Math.round(hero.activeCooldownMs * MissionBridge.getHeroCooldownMultiplier()));
   }
 
   tickCooldownSync(heroId: string | null): void {

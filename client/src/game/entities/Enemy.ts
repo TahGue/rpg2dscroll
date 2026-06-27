@@ -51,6 +51,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private emirPhase = 0;
   private emirSummoned = false;
   private lastShadowDash = 0;
+  private slowToken = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -380,6 +381,42 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.health <= 0) {
       this.die();
     }
+  }
+
+  applySlow(multiplier: number, durationMs: number): void {
+    if (this.isDead) return;
+    const token = ++this.slowToken;
+    const originalSpeed = this.moveSpeed;
+    this.moveSpeed = Math.max(18, Math.round(this.moveSpeed * multiplier));
+    this.setTint(0x66ccff);
+    this.scene.time.delayedCall(durationMs, () => {
+      if (this.isDead || token !== this.slowToken) return;
+      this.moveSpeed = originalSpeed;
+      this.clearTint();
+    });
+  }
+
+  applyDamageOverTime(totalDamage: number, durationMs: number, tint = 0xff8844): void {
+    if (this.isDead) return;
+    const ticks = 3;
+    const perTick = Math.max(1, Math.round(totalDamage / ticks));
+    this.setTint(tint);
+    for (let i = 1; i <= ticks; i += 1) {
+      this.scene.time.delayedCall(Math.round((durationMs / ticks) * i), () => {
+        if (!this.isDead) this.takeDamage(perTick, 0, 0);
+      });
+    }
+    this.scene.time.delayedCall(durationMs + 50, () => {
+      if (!this.isDead) this.clearTint();
+    });
+  }
+
+  isShadowEnemy(): boolean {
+    return this.enemyType === 'sand_wraith' || this.enemyType === 'shadow_emir' || this.enemyType === 'sand_wisp';
+  }
+
+  isBossEnemy(): boolean {
+    return this.isBoss;
   }
 
   private enterEnrage(): void {

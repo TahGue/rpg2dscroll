@@ -20,4 +20,10 @@ describe('mergeSaveData', () => {
     expect(mergeSaveData({ prepUseGateGuard: true }).prepDefenderPost).toBe('gate');
     expect(mergeSaveData({ prepDefenderPost: 'left' }).prepDefenderPost).toBe('left');
   });
+
+  it('normalizes defender type for old or invalid saves', () => {
+    expect(mergeSaveData({}).prepDefenderId).toBe('gate_guard');
+    expect(mergeSaveData({ prepDefenderId: 'archer' }).prepDefenderId).toBe('archer');
+    expect(mergeSaveData({ prepDefenderId: 'dragon' as never }).prepDefenderId).toBe('gate_guard');
+  });
 });

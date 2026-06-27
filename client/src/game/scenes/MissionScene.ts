@@ -13,6 +13,8 @@ import { SpikeTrap } from '../entities/SpikeTrap';
 import { Barricade } from '../entities/Barricade';
 import { RepairStation } from '../entities/RepairStation';
 import { IronTower } from '../entities/IronTower';
+import { SpecialTower } from '../entities/SpecialTower';
+import { SpecialTrap } from '../entities/SpecialTrap';
 import { LionDen } from '../entities/LionDen';
 import { Lion } from '../entities/Lion';
 import { GateGuard } from '../entities/GateGuard';
@@ -46,7 +48,7 @@ export class MissionScene extends Phaser.Scene {
   private pendingVictory: { goldEarned: number; xpEarned: number } | null = null;
   private rightSpawnX = 0;
   private buildSockets: BuildSocket[] = [];
-  private towers: (ArrowTower | SpikeTrap | IronTower)[] = [];
+  private towers: (ArrowTower | SpikeTrap | IronTower | SpecialTower | SpecialTrap)[] = [];
   private barricades: Barricade[] = [];
   private repairStations: RepairStation[] = [];
   private lion: Lion | null = null;
@@ -247,7 +249,7 @@ export class MissionScene extends Phaser.Scene {
       MissionBridge.getLionAnchorX(this.gateX, this.defenseLayout),
     );
     this.syncBattleAllies();
-    this.gateGuard?.update(this.time.now, enemyList);
+    this.gateGuard?.update(this.time.now, enemyList, this.getDefenseTarget());
     this.heroAbilities?.tickCooldownSync(MissionBridge.getActiveHeroId());
     this.hazardManager?.update(this.player, delta);
     this.eclipseOverlay?.update(this.player.x, delta);
@@ -382,7 +384,7 @@ export class MissionScene extends Phaser.Scene {
     const defenderAnchor = MissionBridge.getDefenderAnchorX(this.gateX, this.defenseLayout);
     if (defenderPost !== 'none' && defenderAnchor !== undefined) {
       if (!this.gateGuard) {
-        this.gateGuard = new GateGuard(this, defenderAnchor, this.groundY);
+        this.gateGuard = new GateGuard(this, defenderAnchor, this.groundY, MissionBridge.getDefenderId());
       } else {
         this.gateGuard.setPosition(defenderAnchor, this.groundY);
       }

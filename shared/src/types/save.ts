@@ -2,10 +2,20 @@ import type { MissionBoostType } from '../shop/shopItems';
 import { syncMaterialsToInventory } from '../world/materials';
 import { DEFAULT_KEY_BINDINGS, type KeyBindings } from '../input/keyBindings';
 import { isBattlePost, isDefenderPost, type BattlePost, type DefenderPost } from '../missions/battlePosts';
+import type { DefenderChoice } from '../defenders/defenders';
 
 export type LionMode = 'follow' | 'guard' | 'guard_left' | 'guard_right' | 'aggressive';
 
 const LION_MODES: LionMode[] = ['follow', 'guard', 'guard_left', 'guard_right', 'aggressive'];
+const DEFENDER_CHOICES: DefenderChoice[] = [
+  'gate_guard',
+  'archer',
+  'repair_worker',
+  'hunter',
+  'shield_guard',
+  'water_carrier',
+  'torch_bearer',
+];
 
 export const LION_MODE_LABELS: Record<LionMode, string> = {
   follow: 'Follow Malik',
@@ -16,8 +26,22 @@ export const LION_MODE_LABELS: Record<LionMode, string> = {
 };
 export type BuildChoice =
   | 'arrow_tower'
+  | 'fire_tower'
+  | 'water_tower'
+  | 'relic_tower'
+  | 'ballista'
   | 'spike_trap'
+  | 'fire_pot'
+  | 'water_slow_trap'
+  | 'poison_trap'
+  | 'sand_pit'
+  | 'light_trap'
+  | 'rolling_stone'
   | 'barricade'
+  | 'reinforced_wall'
+  | 'stone_wall'
+  | 'spiked_wall'
+  | 'relic_wall'
   | 'repair_station'
   | 'iron_tower'
   | 'lion_den';
@@ -82,6 +106,8 @@ export interface LocalSaveData {
   prepHeroPost: BattlePost;
   /** Default NPC defender post on wide prep missions. */
   prepDefenderPost: DefenderPost;
+  /** Default NPC defender type on prep missions. */
+  prepDefenderId: DefenderChoice;
   /** Defense skill tree — Phase 1 uses build_speed, repair_speed, cheaper_towers. */
   defenseSkills: Record<string, number>;
   /** Regions the player has entered at least once. */
@@ -148,6 +174,7 @@ export const DEFAULT_SAVE: LocalSaveData = {
   prepUseGateGuard: true,
   prepHeroPost: 'gate',
   prepDefenderPost: 'gate',
+  prepDefenderId: 'gate_guard',
   defenseSkills: {
     build_speed: 0,
     repair_speed: 0,
@@ -208,6 +235,10 @@ export function mergeSaveData(parsed: Partial<LocalSaveData>): LocalSaveData {
       : parsed.prepUseGateGuard
         ? 'gate'
         : 'none',
+    prepDefenderId:
+      parsed.prepDefenderId && DEFENDER_CHOICES.includes(parsed.prepDefenderId)
+        ? parsed.prepDefenderId
+        : DEFAULT_SAVE.prepDefenderId,
     defenseSkills: { ...DEFAULT_SAVE.defenseSkills, ...parsed.defenseSkills },
     visitedOverworldRegions: parsed.visitedOverworldRegions ?? DEFAULT_SAVE.visitedOverworldRegions,
   };

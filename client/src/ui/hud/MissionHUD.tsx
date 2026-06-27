@@ -1,5 +1,5 @@
 import { useGameStore } from '@/store/gameStore';
-import { getBuildDefinition, getDefenseLayout, getHero, getWaveStartHint, getWaveStartLabel, LION_MODE_LABELS, BATTLE_POST_LABELS, DEFENDER_POST_LABELS, type BattlePost, type DefenderPost, type LionMode } from '@malik/shared';
+import { getBuildDefinition, getDefenseLayout, getDefender, getHero, getWaveStartHint, getWaveStartLabel, LION_MODE_LABELS, BATTLE_POST_LABELS, DEFENDER_POST_LABELS, type BattlePost, type DefenderPost, type LionMode } from '@malik/shared';
 import { buildMissionControlHints } from '@/game/utils/controlHints';
 import { SoundManager } from '@/game/systems/SoundManager';
 import { MissionControlBridge } from '@/game/systems/MissionControlBridge';
@@ -201,7 +201,7 @@ export function MissionHUD({ onExit }: MissionHUDProps) {
           )}
           {isWide && mission.defenderPost !== 'none' && (
             <p className="text-[10px] text-blue-200/80">
-              Defender · {DEFENDER_POST_LABELS[mission.defenderPost]}
+              {getDefender(mission.defenderId)?.name ?? 'Defender'} · {DEFENDER_POST_LABELS[mission.defenderPost]}
             </p>
           )}
           {mission.bossPhase > 0 && mission.bossName && (

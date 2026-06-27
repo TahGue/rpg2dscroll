@@ -37,6 +37,14 @@ export const DEFENSE_SKILLS: DefenseSkillDefinition[] = [
     costs: [50, 90, 150],
     effectLabel: '+20 gold, +2 wood, +1 iron per level',
   },
+  {
+    id: 'hero_coordination',
+    name: 'Hero Coordination',
+    description: 'Leadership training reduces hero ability cooldowns during defense.',
+    maxLevel: 3,
+    costs: [60, 110, 180],
+    effectLabel: '-8% hero cooldown per level',
+  },
 ];
 
 export function getDefenseSkillLevel(save: Pick<LocalSaveData, 'defenseSkills'>, skillId: string): number {
@@ -56,6 +64,11 @@ export function getBuildGoldDiscount(save: Pick<LocalSaveData, 'defenseSkills'>)
 export function getDefenseRepairMultiplier(save: Pick<LocalSaveData, 'defenseSkills'>): number {
   const level = getDefenseSkillLevel(save, 'repair_boost');
   return 1 + level * 0.1;
+}
+
+export function getHeroCooldownMultiplier(save: Pick<LocalSaveData, 'defenseSkills'>): number {
+  const level = getDefenseSkillLevel(save, 'hero_coordination');
+  return Math.max(0.7, 1 - level * 0.08);
 }
 
 export function applyDefenseSkillPrepBonus(

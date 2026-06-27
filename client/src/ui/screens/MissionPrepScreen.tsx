@@ -3,6 +3,7 @@ import {
   BLUEPRINT_LABELS,
   BATTLE_POST_LABELS,
   DEFENDER_POST_LABELS,
+  DEFENDER_OPTIONS,
   GATE_GUARD,
   HEROES,
   applyDefenseSkillPrepBonus,
@@ -14,6 +15,7 @@ import {
   isHeroRecruited,
   type BattlePost,
   type DefenderPost,
+  type DefenderChoice,
   type MissionLoadout,
 } from '@malik/shared';
 import { SoundManager } from '@/game/systems/SoundManager';
@@ -38,6 +40,7 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
   const gateGuard = save.prepUseGateGuard;
   const heroPost = save.prepHeroPost;
   const defenderPost = save.prepDefenderPost;
+  const defenderId = save.prepDefenderId;
   const isWide = Boolean(getDefenseLayout(missionId).wideBattlefield);
   const hero = selectedHeroId ? getHero(selectedHeroId) : null;
 
@@ -52,6 +55,7 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
       gateGuard: isWide ? defenderPost !== 'none' : gateGuard,
       heroPost,
       defenderPost: isWide ? defenderPost : gateGuard ? 'gate' : 'none',
+      defenderId,
     };
     confirmMissionPrep(missionId, loadout);
   };
@@ -166,6 +170,16 @@ export function MissionPrepScreen({ missionId, onBack }: MissionPrepScreenProps)
                 onSelect={(post) => {
                   SoundManager.play('click');
                   useGameStore.getState().updateSaveFields({ prepHeroPost: post as BattlePost });
+                }}
+              />
+              <PostPicker
+                label="Defender type"
+                options={DEFENDER_OPTIONS.map((def) => ({ id: def.id, label: def.name }))}
+                value={defenderId}
+                disabled={defenderPost === 'none'}
+                onSelect={(id) => {
+                  SoundManager.play('click');
+                  useGameStore.getState().updateSaveFields({ prepDefenderId: id as DefenderChoice });
                 }}
               />
               <PostPicker

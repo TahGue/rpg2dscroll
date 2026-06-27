@@ -5,13 +5,17 @@ import {
   getNgPlusMultiplier,
   getBuildGoldDiscount,
   getDefenseRepairMultiplier,
+  getHeroCooldownMultiplier,
   getHero,
+  isTowerBuild,
+  isTrapBuild,
   getLionGuardAnchorRatio,
   getBattlePostAnchorRatio,
   type BuildUnlockContext,
   type DefenseLayout,
   type BattlePost,
   type DefenderPost,
+  type DefenderChoice,
 } from '@malik/shared';
 import { useGameStore } from '@/store/gameStore';
 import { persistSave } from '@/services/saveService';
@@ -273,6 +277,10 @@ export class MissionBridge {
     return useGameStore.getState().mission.heroId;
   }
 
+  static getHeroCooldownMultiplier(): number {
+    return getHeroCooldownMultiplier(useGameStore.getState().save);
+  }
+
   static usePrepBuildRules(): boolean {
     return useGameStore.getState().mission.usePrepBuildRules;
   }
@@ -321,9 +329,9 @@ export class MissionBridge {
 
   static recordBuildPlaced(buildId: string): void {
     const state = useGameStore.getState();
-    if (buildId === 'arrow_tower' || buildId === 'iron_tower') {
+    if (isTowerBuild(buildId)) {
       state.updateMissionRuntime({ towersBuilt: state.mission.towersBuilt + 1 });
-    } else if (buildId === 'spike_trap') {
+    } else if (isTrapBuild(buildId)) {
       state.updateMissionRuntime({ trapsBuilt: state.mission.trapsBuilt + 1 });
     }
   }
@@ -331,10 +339,10 @@ export class MissionBridge {
   static canPlaceBuildType(buildId: string): boolean {
     const m = useGameStore.getState().mission;
     if (!m.usePrepBuildRules) return true;
-    if (buildId === 'arrow_tower' || buildId === 'iron_tower') {
+    if (isTowerBuild(buildId)) {
       return m.towersBuilt < m.maxTowerBuilds;
     }
-    if (buildId === 'spike_trap') {
+    if (isTrapBuild(buildId)) {
       return m.trapsBuilt < m.maxTrapBuilds;
     }
     return true;
@@ -350,6 +358,10 @@ export class MissionBridge {
 
   static getDefenderPost(): DefenderPost {
     return useGameStore.getState().mission.defenderPost;
+  }
+
+  static getDefenderId(): DefenderChoice {
+    return useGameStore.getState().mission.defenderId;
   }
 
   static getPostAnchorX(gateX: number, layout: DefenseLayout, post: BattlePost): number | undefined {

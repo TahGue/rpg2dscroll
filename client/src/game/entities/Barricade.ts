@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BARRICADE } from '@malik/shared';
+import { BARRICADE, getBuildDefinition, type BuildChoice } from '@malik/shared';
 import { SoundManager } from '../systems/SoundManager';
 import { showDamageNumber } from '../utils/combatFeedback';
 import type { AttackableObstacle } from './AttackableObstacle';
@@ -11,13 +11,15 @@ export class Barricade extends Phaser.Physics.Arcade.Sprite implements Attackabl
   private hpBarBg: Phaser.GameObjects.Rectangle;
   private hpBarFill: Phaser.GameObjects.Rectangle;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, buildId: BuildChoice = 'barricade') {
     super(scene, x, y, 'barricade');
 
-    this.maxHp = BARRICADE.maxHp ?? 140;
+    const def = getBuildDefinition(buildId) ?? BARRICADE;
+    this.maxHp = def.maxHp ?? BARRICADE.maxHp ?? 140;
     this.hp = this.maxHp;
 
     this.setOrigin(0.5, 1);
+    this.setTint(this.getWallTint(buildId));
     this.setDepth(6);
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
@@ -34,6 +36,8 @@ export class Barricade extends Phaser.Physics.Arcade.Sprite implements Attackabl
     if (this.destroyed) return;
 
     this.hp = Math.max(0, this.hp - amount);
+    const thorns = this.getThornsDamage();
+    if (thorns > 0) this.scene.events.emit('barricade-thorns', { x: this.x, y: this.y, damage: thorns });
     this.updateHpBar();
     SoundManager.play('hit');
     showDamageNumber(this.scene, this.x, this.y - 45, amount, '#cc8844');
@@ -75,5 +79,24 @@ export class Barricade extends Phaser.Physics.Arcade.Sprite implements Attackabl
 
   private updateHpBar(): void {
     this.hpBarFill.width = 50 * (this.hp / this.maxHp);
+  }
+
+  private getWallTint(buildId: BuildChoice): number {
+    switch (buildId) {
+      case 'reinforced_wall':
+        return 0xaa8866;
+      case 'stone_wall':
+        return 0xaaaabb;
+      case 'spiked_wall':
+        return 0xcc9966;
+      case 'relic_wall':
+        return 0xffdd88;
+      default:
+        return 0xffffff;
+    }
+  }
+
+  private getThornsDamage(): number {
+    return this.maxHp === 240 ? 6 : 0;
   }
 }

@@ -5,6 +5,7 @@ import {
   getBuildGoldDiscount,
   getDefenseRepairMultiplier,
   getDefenseSkillCost,
+  getHeroCooldownMultiplier,
 } from './defenseSkills';
 import { getMissionPrepConfig } from '../missions/missionPrep';
 
@@ -17,6 +18,11 @@ describe('defenseSkills', () => {
   it('boosts repair rate', () => {
     const save = { ...DEFAULT_SAVE, defenseSkills: { ...DEFAULT_SAVE.defenseSkills, repair_boost: 3 } };
     expect(getDefenseRepairMultiplier(save)).toBe(1.3);
+  });
+
+  it('reduces hero cooldowns through leadership', () => {
+    const save = { ...DEFAULT_SAVE, defenseSkills: { ...DEFAULT_SAVE.defenseSkills, hero_coordination: 2 } };
+    expect(getHeroCooldownMultiplier(save)).toBeCloseTo(0.84);
   });
 
   it('adds extra prep supplies', () => {

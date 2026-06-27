@@ -42,7 +42,10 @@ describe('missionPrep', () => {
   it('enforces tower and trap slot limits', () => {
     const cfg = getMissionPrepConfig('mission-night-attack')!;
     expect(canPlaceBuildType('arrow_tower', 2, 0, cfg)).toBe(false);
+    expect(canPlaceBuildType('fire_tower', 2, 0, cfg)).toBe(false);
     expect(canPlaceBuildType('spike_trap', 1, 3, cfg)).toBe(false);
+    expect(canPlaceBuildType('poison_trap', 1, 3, cfg)).toBe(false);
     expect(canPlaceBuildType('spike_trap', 0, 1, cfg)).toBe(true);
+    expect(canPlaceBuildType('stone_wall', 2, 3, cfg)).toBe(true);
   });
 });
